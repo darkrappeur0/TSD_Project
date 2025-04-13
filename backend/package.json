@@ -1,7 +1,7 @@
 {
   "name": "planning_poker",
   "version": "1.0.0",
-  "description": "A planning poker ",
+  "description": "A planning poker app",
   "main": "src/server.ts",
   "scripts": {
     "start": "ts-node src/server.ts",
