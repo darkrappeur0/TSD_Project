@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Planning Poker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Planning Poker</h1>
+    <div id="deck" class="deck"></div>
+    <div class="controls">
+        <button onclick="reveal()">Reveal</button>
+        <button onclick="reset()">Reset</button>
+    </div>
+    <div id="votes" class="votes"></div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
