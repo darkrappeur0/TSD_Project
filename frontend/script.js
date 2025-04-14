@@ -41,6 +41,10 @@ function reveal() {
 
 socket.on('update', session => {
     renderVotes(session);
+    // to reset hasVoted if there are no votes (which happens after reset)
+    if (session.votes.length === 0) {
+        hasVoted = false;
+    }
 });
 
 renderDeck();
