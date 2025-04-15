@@ -33,3 +33,8 @@ body {
 .controls {
     margin: 10px;
 }
+
+.card.selected {
+    background-color: blue;
+    color: white;
+}
