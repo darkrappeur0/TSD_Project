@@ -30,11 +30,15 @@ function renderVotes(session) {
     });
 }
 
-function reset() {
+function resetme() {
     hasVoted = false;
-    socket.emit('reset');
+    socket.emit('resetme');
 }
 
+function resetall() {
+    hasVoted = false;
+    socket.emit('resetall');
+}
 function reveal() {
     socket.emit('reveal');
 }

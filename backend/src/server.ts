@@ -36,11 +36,18 @@ io.on('connection', (socket) => {
     updateVotes();
   });
 
-  socket.on('reset', () => {
+   socket.on('resetall', () => {
     session.votes = [];
     session.revealed = false;
     updateVotes();
+  }); 
+  socket.on('resetme', () => {
+    // On enlève uniquement le vote de l'utilisateur correspondant à ce socket
+    session.votes = session.votes.filter(vote => vote.userId !== socket.id);
+    session.revealed = false;
+    updateVotes();
   });
+  
 
   socket.on('reveal', () => {
     session.revealed = true;
