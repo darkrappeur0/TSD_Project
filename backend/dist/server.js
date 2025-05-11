@@ -22,8 +22,18 @@ app.get('/', (req, res) => {
 });
 let stories = [];
 let currentStoryId = null;
+const sessions = {};
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
+    // Create a new session or use an existing one
+    const sessionId = (0, uuid_1.v4)(); // Generate a new session ID for each new connection
+    if (!sessions[sessionId]) {
+        sessions[sessionId] = { id: sessionId, members: [] };
+    }
+    // Add the user to the session
+    sessions[sessionId].members.push(socket.id);
+    // Emit the session ID to the frontend
+    socket.emit('sessionID', sessionId);
     socket.on('vote', (value) => {
         if (!currentStoryId)
             return;
@@ -76,16 +86,17 @@ io.on('connection', (socket) => {
             return;
         story.votes = story.votes.filter(v => v.userId !== socket.id);
         updateVotes(story);
+        // Remove the user from the session
+        const session = Object.values(sessions).find(s => s.members.includes(socket.id));
+        if (session) {
+            session.members = session.members.filter(id => id !== socket.id);
+        }
     });
     socket.emit('stories', stories);
 });
 function updateVotes(story) {
     io.emit('update', { storyId: story.id, votes: story.votes, revealed: story.revealed });
 }
-server.listen(3000, () => {
-    console.log('Server is running on http://localhost:3000');
-});
-const sessions = {};
 app.post('/session', (req, res) => {
     const sessionId = (0, uuid_1.v4)();
     sessions[sessionId] = { id: sessionId, members: [] };
@@ -119,6 +130,6 @@ app.post('/selectStory', (req, res) => {
     io.emit('stories', stories);
     res.status(200).json({ selected: id });
 });
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });

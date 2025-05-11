@@ -8,15 +8,6 @@
 <body>
   <h1>Planning Poker</h1>
 
-  <!-- Estimation -->
-  <div id="deck" class="deck"></div>
-  <div class="controls">
-    <button onclick="reveal()">Reveal</button>
-    <button onclick="resetme()">Reset me</button>
-    <button onclick="resetall()">New estimation</button>
-  </div>
-  <div id="votes" class="votes"></div>
-
   <!-- Session Management -->
   <section id="session-section">
     <h2>Create a New Session</h2>
@@ -34,6 +25,63 @@
   </section>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="script.js"></script>
+  <script>
+    const socket = io();
+
+    // Handle the creation of a session
+    document.getElementById("create-session-btn").addEventListener("click", function() {
+      const developerName = document.getElementById("developer-name").value;
+      if (!developerName) {
+        alert("Please enter your name!");
+        return;
+      }
+
+      // Make a POST request to create a new session
+      fetch('/session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: developerName }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        // Get the session ID from the response
+        const sessionId = data.sessionId;
+        // Redirect to session.html with the session ID
+        window.location.href = `session.html?id=${sessionId}`;
+      })
+      .catch(error => {
+        document.getElementById("session-result").innerText = "Error creating session!";
+        console.error("Error:", error);
+      });
+    });
+
+    // Handle joining a session
+    document.getElementById("join-session-btn").addEventListener("click", function() {
+      const developerName = document.getElementById("join-name").value;
+      const sessionId = document.getElementById("join-session-id").value;
+
+      if (!developerName || !sessionId) {
+        alert("Please enter both your name and a session ID!");
+        return;
+      }
+
+      // Make a GET request to check if the session exists
+      fetch(`/session/${sessionId}`)
+        .then(response => {
+          if (response.ok) {
+            // Redirect to session.html with the session ID
+            window.location.href = `session.html?id=${sessionId}`;
+          } else {
+            document.getElementById("join-result").innerText = "Session not found!";
+          }
+        })
+        .catch(error => {
+          document.getElementById("join-result").innerText = "Error joining session!";
+          console.error("Error:", error);
+        });
+    });
+  </script>
 </body>
 </html>

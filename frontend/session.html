@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Planning Poker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Planning Poker</h1>
+    
+    <!-- Session ID display -->
+    <div id="session-id" class="session-id"></div>
+
+    <div id="deck" class="deck"></div>
+    <div class="controls">
+        <button onclick="reveal()">Reveal</button>
+        <button onclick="resetme()">Reset me</button>
+        <button onclick="resetall()">New estimation</button>
+    </div>
+    <div id="votes" class="votes"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // Listen for the session ID from the server
+        socket.on('sessionID', function(sessionId) {
+            // Display the session ID in the #session-id div
+            document.getElementById('session-id').innerText = 'Session ID: ' + sessionId;
+        });
+    </script>
+    <script src="script.js"></script>
+</body>
+</html>
