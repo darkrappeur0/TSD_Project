@@ -1,67 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Planning Poker</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Planning Poker</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Planning Poker</h1>
-    <div id="deck" class="deck"></div>
-    <div class="controls">
-        <button onclick="reveal()">Reveal</button>
-        <button onclick="resetme()">Reset me</button>
-        <button onclick="resetall()">New estimation</button>
-    </div>
+  <h1>Planning Poker</h1>
 
-    <div id="votes" class="votes"></div>
+  <!-- Estimation -->
+  <div id="deck" class="deck"></div>
+  <div class="controls">
+    <button onclick="reveal()">Reveal</button>
+    <button onclick="resetme()">Reset me</button>
+    <button onclick="resetall()">New estimation</button>
+  </div>
+  <div id="votes" class="votes"></div>
 
-    <section id="session-section">
-        <h2>Create a New Session</h2>
-        <input type="text" id="developer-name" placeholder="Your name" />
-        <button id="create-session-btn">Create Session</button>
-        <p id="session-result"></p>
-    </section>
+  <!-- Session Management -->
+  <section id="session-section">
+    <h2>Create a New Session</h2>
+    <input type="text" id="developer-name" placeholder="Your name" />
+    <button id="create-session-btn">Create Session</button>
+    <p id="session-result"></p>
+  </section>
 
-    <section id="join-session-section">
-        <h2>Join a Session</h2>
-        <input type="text" id="join-name" placeholder="Your name" />
-        <input type="text" id="join-session-id" placeholder="Session ID" />
-        <button id="join-session-btn">Join Session</button>
-        <p id="join-result"></p>
-    </section>
+  <section id="join-session-section">
+    <h2>Join a Session</h2>
+    <input type="text" id="join-name" placeholder="Your name" />
+    <input type="text" id="join-session-id" placeholder="Session ID" />
+    <button id="join-session-btn">Join Session</button>
+    <p id="join-result"></p>
+  </section>
 
-    <!-- ✅ Ajout MVPs -->
-    <section id="mvp-section">
-        <h2>New MVP</h2>
-        <input type="text" id="new-mvp-input" placeholder="Describe new MVP..." />
-        <button id="add-mvp-btn">Add MVP</button>
-        <ul id="new-mvps-list"></ul>
-    </section>
-
-    <section id="old-mvp-section">
-        <h2>Previous MVPs</h2>
-        <ul id="old-mvps-list">
-            <li>MVP 1: User login system</li>
-            <li>MVP 2: Task creation</li>
-            <li>MVP 3: Real-time vote sync</li>
-        </ul>
-    </section>
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="script.js"></script>
-    <script>
-        // Ajouter un nouveau MVP
-        document.getElementById('add-mvp-btn').addEventListener('click', () => {
-            const input = document.getElementById('new-mvp-input');
-            const list = document.getElementById('new-mvps-list');
-            if (input.value.trim()) {
-                const li = document.createElement('li');
-                li.textContent = input.value.trim();
-                list.appendChild(li);
-                input.value = '';
-            }
-        });
-    </script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
