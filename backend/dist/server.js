@@ -23,35 +23,59 @@ app.get('/', (req, res) => {
 let stories = [];
 let currentStoryId = null;
 const sessions = {};
+// Initialize a default story
+function initializeDefaultStory() {
+    const defaultStory = {
+        id: (0, uuid_1.v4)(),
+        title: "Default Story",
+        votes: [],
+        revealed: false
+    };
+    stories.push(defaultStory);
+    currentStoryId = defaultStory.id;
+    return defaultStory;
+}
 io.on('connection', (socket) => {
+    var _a, _b;
     console.log(`User connected: ${socket.id}`);
-    // Create a new session or use an existing one
-    const sessionId = (0, uuid_1.v4)(); // Generate a new session ID for each new connection
+    // Create or reuse a session
+    const sessionId = (0, uuid_1.v4)();
     if (!sessions[sessionId]) {
-        sessions[sessionId] = { id: sessionId, members: [] };
+        sessions[sessionId] = { id: sessionId, members: [], stories: [] };
     }
-    // Add the user to the session
     sessions[sessionId].members.push(socket.id);
-    // Emit the session ID to the frontend
+    // Initialize a story if none exists
+    if (stories.length === 0) {
+        initializeDefaultStory();
+    }
+    // Send session and story data to the client
     socket.emit('sessionID', sessionId);
+    socket.emit('update', {
+        votes: ((_a = stories.find(s => s.id === currentStoryId)) === null || _a === void 0 ? void 0 : _a.votes) || [],
+        revealed: ((_b = stories.find(s => s.id === currentStoryId)) === null || _b === void 0 ? void 0 : _b.revealed) || false
+    });
+    // Event handlers
     socket.on('vote', (value) => {
-        if (!currentStoryId)
-            return;
         const story = stories.find(s => s.id === currentStoryId);
         if (!story)
             return;
-        let user = story.votes.find(v => v.userId === socket.id);
-        if (!user) {
-            story.votes.push({ userId: socket.id, value });
+        const userVote = story.votes.find(v => v.userId === socket.id);
+        if (userVote) {
+            userVote.value = value;
         }
         else {
-            user.value = value;
+            story.votes.push({ userId: socket.id, value });
         }
         updateVotes(story);
     });
-    socket.on('resetall', () => {
-        if (!currentStoryId)
+    socket.on('reveal', () => {
+        const story = stories.find(s => s.id === currentStoryId);
+        if (!story)
             return;
+        story.revealed = true;
+        updateVotes(story);
+    });
+    socket.on('resetall', () => {
         const story = stories.find(s => s.id === currentStoryId);
         if (!story)
             return;
@@ -60,76 +84,106 @@ io.on('connection', (socket) => {
         updateVotes(story);
     });
     socket.on('resetme', () => {
-        if (!currentStoryId)
-            return;
-        const story = stories.find(s => s.id === currentStoryId);
-        if (!story)
-            return;
-        story.votes = story.votes.filter(vote => vote.userId !== socket.id);
-        story.revealed = false;
-        updateVotes(story);
-    });
-    socket.on('reveal', () => {
-        if (!currentStoryId)
-            return;
-        const story = stories.find(s => s.id === currentStoryId);
-        if (!story)
-            return;
-        story.revealed = true;
-        updateVotes(story);
-    });
-    socket.on('disconnect', () => {
-        if (!currentStoryId)
-            return;
         const story = stories.find(s => s.id === currentStoryId);
         if (!story)
             return;
         story.votes = story.votes.filter(v => v.userId !== socket.id);
         updateVotes(story);
-        // Remove the user from the session
-        const session = Object.values(sessions).find(s => s.members.includes(socket.id));
-        if (session) {
-            session.members = session.members.filter(id => id !== socket.id);
+    });
+    socket.on('disconnect', () => {
+        const story = stories.find(s => s.id === currentStoryId);
+        if (story) {
+            story.votes = story.votes.filter(v => v.userId !== socket.id);
+            updateVotes(story);
         }
     });
-    socket.emit('stories', stories);
 });
 function updateVotes(story) {
-    io.emit('update', { storyId: story.id, votes: story.votes, revealed: story.revealed });
+    io.emit('update', {
+        votes: story.votes,
+        revealed: story.revealed
+    });
 }
+// REST endpoints (unchanged)
 app.post('/session', (req, res) => {
     const sessionId = (0, uuid_1.v4)();
-    sessions[sessionId] = { id: sessionId, members: [] };
+    sessions[sessionId] = { id: sessionId, members: [], stories: [] };
     res.status(201).json({ sessionId });
 });
 app.get('/session/:id', (req, res) => {
     const session = sessions[req.params.id];
-    if (!session) {
-        return res.status(404).json({ message: 'Session not found' });
-    }
-    res.json(session);
-});
-app.post('/story', (req, res) => {
-    const { title } = req.body;
-    const id = (0, uuid_1.v4)();
-    const story = { id, title, votes: [], revealed: false };
-    stories.push(story);
-    currentStoryId = id;
-    io.emit('stories', stories);
-    res.status(201).json(story);
-});
-app.get('/stories', (req, res) => {
-    res.json(stories);
-});
-app.post('/selectStory', (req, res) => {
-    const { id } = req.body;
-    const exists = stories.find(story => story.id === id);
-    if (!exists)
-        return res.status(404).json({ message: 'Story not found' });
-    currentStoryId = id;
-    io.emit('stories', stories);
-    res.status(200).json({ selected: id });
+    res.json(session || { message: 'Session not found' });
 });
 server.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
+});
+// CREATE a new user story
+app.post('/session/:id/story', (req, res) => {
+    const session = sessions[req.params.id];
+    if (!session)
+        return res.status(404).json({ message: 'Session not found' });
+    const { title, description } = req.body;
+    if (!title || !description) {
+        return res.status(400).json({ message: 'Title and description required' });
+    }
+    const newStory = { id: (0, uuid_1.v4)(), title, description, points: null, votes: {} };
+    session.stories.push(newStory);
+    res.status(201).json(newStory);
+});
+// READ all user stories
+app.get('/session/:id/stories', (req, res) => {
+    const session = sessions[req.params.id];
+    if (!session)
+        return res.status(404).json({ message: 'Session not found' });
+    res.json(session.stories);
+});
+// UPDATE a user story
+app.put('/session/:id/story/:storyId', (req, res) => {
+    const session = sessions[req.params.id];
+    if (!session)
+        return res.status(404).json({ message: 'Session not found' });
+    const story = session.stories.find(s => s.id === req.params.storyId);
+    if (!story)
+        return res.status(404).json({ message: 'Story not found' });
+    const { title, description, points } = req.body;
+    if (title)
+        story.title = title;
+    if (description)
+        story.description = description;
+    if (points !== undefined)
+        story.points = points;
+    res.json(story);
+});
+// DELETE a user story
+app.delete('/session/:id/story/:storyId', (req, res) => {
+    const session = sessions[req.params.id];
+    if (!session)
+        return res.status(404).json({ message: 'Session not found' });
+    session.stories = session.stories.filter(s => s.id !== req.params.storyId);
+    res.status(204).send();
+});
+app.post('/session/:id/story/:storyId/vote', (req, res) => {
+    const session = sessions[req.params.id];
+    if (!session)
+        return res.status(404).json({ message: 'Session not found' });
+    const story = session.stories.find(s => s.id === req.params.storyId);
+    if (!story)
+        return res.status(404).json({ message: 'Story not found' });
+    const { developer, vote } = req.body;
+    if (!developer || typeof vote !== 'number') {
+        return res.status(400).json({ message: 'Developer name and vote are required' });
+    }
+    story.votes[developer] = vote;
+    const allVoted = session.members.every(name => story.votes[name] !== undefined);
+    res.status(200).json({ message: 'Vote recorded', allVoted, votes: story.votes });
+});
+app.post('/session/:id/story/:storyId/reset', (req, res) => {
+    const session = sessions[req.params.id];
+    if (!session)
+        return res.status(404).json({ message: 'Session not found' });
+    const story = session.stories.find(s => s.id === req.params.storyId);
+    if (!story)
+        return res.status(404).json({ message: 'Story not found' });
+    story.votes = {};
+    res.status(200).json({ message: 'Votes reset' });
 });

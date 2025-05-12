@@ -1,33 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Planning Poker</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>Planning Poker</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <h1>Planning Poker</h1>
-    
-    <!-- Session ID display -->
-    <div id="session-id" class="session-id"></div>
+  <h1>Planning Poker</h1>
 
-    <div id="deck" class="deck"></div>
-    <div class="controls">
-        <button onclick="reveal()">Reveal</button>
-        <button onclick="resetme()">Reset me</button>
-        <button onclick="resetall()">New estimation</button>
+  <div id="session-id" class="session-id"></div>
+
+  <section id="story-section" style="margin-top: 2rem;">
+    <h2>User Stories</h2>
+    <input type="text" id="story-title" placeholder="Story title" />
+    <input type="text" id="story-description" placeholder="Story description" />
+    <button id="add-story-btn">Add Story</button>
+
+    <!-- Suppression par titre -->
+    <div style="margin-top: 1rem;">
+      <input type="text" id="delete-story-title" placeholder="Story title to delete" />
+      <button id="delete-story-btn">Delete Story</button>
     </div>
-    <div id="votes" class="votes"></div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // ensuring the deck is rendered when the page loads
-        if (typeof renderDeck === 'function') {
-            renderDeck();
-        }
-    });
-    </script>
-    <script src="script.js"></script>
+    <p id="story-error-msg" style="color: red; font-weight: bold;"></p>
+  </section>
+
+  <p>
+    <label for="story-select"><strong>Select a Story:</strong></label>
+    <select id="story-select">
+      <option value="">-- Select Story --</option>
+    </select>
+  </p>
+
+  <div id="selected-story">
+    <h3 id="selected-story-title" style="margin-bottom: 0;"></h3>
+    <p id="selected-story-description" style="margin-top: 0;"></p>
+  </div>
+
+  <div id="deck" class="deck"></div>
+  <div class="controls">
+    <button onclick="reveal()">Reveal</button>
+    <button onclick="resetme()">Reset me</button>
+    <button onclick="resetall()">New estimation</button>
+  </div>
+
+  <div id="votes" class="votes"></div>
+
+  <h2>Previous Stories</h2>
+  <ul id="previous-stories"></ul>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
