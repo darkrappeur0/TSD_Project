@@ -58,7 +58,11 @@ function reveal() {
     socket.emit('reveal');
 }
 
-socket.on('update', session => {
+socket.on('update', (data) => {
+    const session = {
+        votes: data.votes || [],
+        revealed: data.revealed || false
+    };
     renderVotes(session);
     if (session.votes.length === 0) {
         hasVoted = false;
