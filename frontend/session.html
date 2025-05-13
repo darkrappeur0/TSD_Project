@@ -1,33 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Planning Poker</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Planning Poker</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Planning Poker</h1>
-    
-    <!-- Session ID display -->
-    <div id="session-id" class="session-id"></div>
+  <h1>Planning Poker</h1>
 
-    <div id="deck" class="deck"></div>
-    <div class="controls">
-        <button onclick="reveal()">Reveal</button>
-        <button onclick="resetme()">Reset me</button>
-        <button onclick="resetall()">New estimation</button>
-    </div>
-    <div id="votes" class="votes"></div>
+  <!-- Session ID display -->
+  <div id="session-id" class="session-id"></div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // ensuring the deck is rendered when the page loads
-        if (typeof renderDeck === 'function') {
-            renderDeck();
-        }
+  <!-- User story input -->
+  <div class="story-form">
+    <h2>Add a User Story</h2>
+    <input type="text" id="story-title" placeholder="Story Title" />
+    <textarea id="story-description" placeholder="Story Description"></textarea>
+    <button onclick="addStory()">Add Story</button>
+  </div>
+
+  <!-- List of user stories -->
+  <div id="story-list" class="story-list">
+    <h3>User Stories</h3>
+    <ul id="stories"></ul>
+  </div>
+
+  <!-- Voting deck -->
+  <div id="deck" class="deck"></div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button onclick="reveal()">Reveal</button>
+    <button onclick="resetme()">Reset me</button>
+    <button onclick="resetall()">New estimation</button>
+  </div>
+
+  <!-- Vote results -->
+  <div id="votes" class="votes"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      if (typeof renderDeck === 'function') {
+        renderDeck();
+      }
     });
-    </script>
-    <script src="script.js"></script>
+  </script>
+  <script src="script.js"></script>
 </body>
 </html>
