@@ -60,7 +60,8 @@ io.on('connection', (socket) => {
   socket.emit('sessionID', sessionId);
   socket.emit('update', {
     votes: stories.find(s => s.id === currentStoryId)?.votes || [],
-    revealed: stories.find(s => s.id === currentStoryId)?.revealed || false
+    revealed: stories.find(s => s.id === currentStoryId)?.revealed || false,
+    title: stories.find(s => s.id === currentStoryId)?.title || "No story available"
   });
 
   // Event handlers
@@ -114,7 +115,8 @@ io.on('connection', (socket) => {
 function updateVotes(story: Story) {
   io.emit('update', {
     votes: story.votes,
-    revealed: story.revealed
+    revealed: story.revealed,
+    title: story.title
   });
 }
 

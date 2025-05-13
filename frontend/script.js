@@ -2,6 +2,7 @@ const socket = io();
 const deck = ['1', '2', '3', '5', '8', '13', '21'];
 const deckContainer = document.getElementById('deck');
 const votesContainer = document.getElementById('votes');
+const storyTitleContainer = document.getElementById('story-title');  // Ajouter un conteneur pour afficher le titre de la story
 let hasVoted = false;
 
 // Render voting cards
@@ -41,6 +42,13 @@ function renderVotes(data) {
   });
 }
 
+// Display the story title
+function renderStoryTitle(title) {
+  if (storyTitleContainer) {
+    storyTitleContainer.textContent = `User Story: ${title}`;
+  }
+}
+
 // Button actions
 function reveal() {
   socket.emit('reveal');
@@ -61,6 +69,7 @@ function resetall() {
 // Socket event listeners
 socket.on('update', (data) => {
   renderVotes(data);
+  renderStoryTitle(data.title);  // Afficher le titre de la story
   if (data.votes.length === 0) hasVoted = false;
 });
 
