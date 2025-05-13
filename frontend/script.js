@@ -28,7 +28,7 @@ function highlightSelectedCard(card) {
   card.classList.add('selected');
 }
 
-// Display votes (hidden or revealed)
+// Display votes
 function renderVotes(data) {
   votesContainer.innerHTML = '';
   if (!data?.votes) return;
@@ -64,5 +64,30 @@ socket.on('update', (data) => {
   if (data.votes.length === 0) hasVoted = false;
 });
 
-// Initialize
+// Add a story
+function addStory() {
+  const title = document.getElementById('story-title').value;
+  const description = document.getElementById('story-description').value;
+  if (!title || !description) {
+    alert("Please enter both title and description.");
+    return;
+  }
+
+  socket.emit('addStory', { title, description });
+  document.getElementById('story-title').value = '';
+  document.getElementById('story-description').value = '';
+}
+
+// Render story list
+socket.on('storiesUpdated', (stories) => {
+  const storyList = document.getElementById('stories');
+  storyList.innerHTML = '';
+  stories.forEach(story => {
+    const li = document.createElement('li');
+    li.innerHTML = `<strong>${story.title}</strong><br><em>${story.description}</em>`;
+    storyList.appendChild(li);
+  });
+});
+
+// Init
 renderDeck();
