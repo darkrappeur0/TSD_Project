@@ -81,7 +81,7 @@ document.getElementById('add-story-btn').addEventListener('click', async () => {
 
   storyErrorMsg.textContent = '';
 
-  await fetch(`/session/${sessionId}/story`, {
+  await fetch(`/session/${sessionId}/stories`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ title, description }),
@@ -132,6 +132,88 @@ async function fetchStories() {
   stories = await res.json();
   updateStoryDropdown();
 }
+
+// Drag and drop functionality for CSV upload
+const dropArea = document.getElementById('csv-drop-area');
+const fileInput = document.getElementById('csv-upload');
+
+dropArea.addEventListener('click', () => fileInput.click());
+
+dropArea.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropArea.style.background = '#f0f0f0';
+});
+
+dropArea.addEventListener('dragleave', () => {
+  dropArea.style.background = '';
+});
+
+dropArea.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropArea.style.background = '';
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.csv')) {
+    readCSVFile(file);
+  } else {
+    alert('Please drop a CSV file.');
+  }
+});
+
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file && file.name.endsWith('.csv')) {
+    readCSVFile(file);
+  } else {
+    alert('Please select a CSV file.');
+  }
+});
+
+async function readCSVFile(file) {
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const text = e.target.result;
+    const lines = text.split('\n').filter(line => line.trim());
+    for (const line of lines) {
+      const [title, description] = line.split(';').map(s => s.trim());
+      if (!title || !description) continue;
+      await fetch(`/session/${sessionId}/story`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, description }),
+      });
+    }
+  };
+  fetchStories();
+  reader.readAsText(file);
+}
+
+// Export stories to CSV
+document.addEventListener('DOMContentLoaded', () => {
+  const exportBtn = document.getElementById('export-csv-btn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', async () => {
+      // Fetch latest stories
+      const res = await fetch(`/session/${sessionId}/stories`);
+      const exportStories = await res.json();
+      // Prepare CSV content (empty if no stories)
+      const csvRows = exportStories.length
+        ? exportStories.map(s => `"${s.title.replace(/"/g, '""')}";"${s.description.replace(/"/g, '""')}"`)
+        : [];
+      const csvContent = csvRows.join('\n');
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'stories.csv';
+      document.body.appendChild(a);
+      a.click(); // This triggers the download
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  }
+});
+
 
 // Reveal/reset
 function reveal() {
