@@ -21,37 +21,35 @@ app.get('/', (req, res) => {
 });
 
 type Vote = { userId: string; value: string | null };
-type Story = { id: string; title: string; votes: Vote[]; revealed: boolean };
+type Story = { id: string; title: string; description: string; votes: Vote[]; revealed: boolean };
 
-const stories: Story[] = [];
-let currentStoryId: string | null = null;
-
-// Sessions now include a list of user stories
 const sessions: {
   [id: string]: {
     id: string;
     members: string[];
-    stories: { id: string; title: string; description: string }[];
+    stories: Story[];
   };
 } = {};
 
-// Initialize default story
-function initializeDefaultStory() {
+// Initialize default story for the session
+function initializeDefaultStory(sessionId: string) {
   const defaultStory: Story = {
     id: uuidv4(),
     title: "Default Story",
+    description: "This is a default story",
     votes: [],
     revealed: false
   };
-  stories.push(defaultStory);
-  currentStoryId = defaultStory.id;
-  return defaultStory;
+
+  // Add the default story to the session
+  if (sessions[sessionId]) {
+    sessions[sessionId].stories.push(defaultStory);
+  }
 }
 
+// Socket events
 io.on('connection', (socket) => {
-  console.log(`User connected: ${socket.id}`);
-
-  const sessionId = uuidv4();
+  const sessionId = uuidv4();  // For now creating a new session for each user, you may want to change this
   if (!sessions[sessionId]) {
     sessions[sessionId] = {
       id: sessionId,
@@ -61,24 +59,23 @@ io.on('connection', (socket) => {
   }
   sessions[sessionId].members.push(socket.id);
 
-  if (stories.length === 0) {
-    initializeDefaultStory();
+  // Initialize default story if none exists
+  if (sessions[sessionId].stories.length === 0) {
+    initializeDefaultStory(sessionId);
   }
 
   socket.emit('sessionID', sessionId);
   socket.emit('update', {
-    votes: stories.find(s => s.id === currentStoryId)?.votes || [],
-    revealed: stories.find(s => s.id === currentStoryId)?.revealed || false
+    votes: [],
+    revealed: false
   });
 
-  // Return stories
+  // Send stories to the client
   socket.emit('storiesUpdated', sessions[sessionId].stories);
 
-  // Vote
+  // Handle voting event
   socket.on('vote', (value: string) => {
-    const story = stories.find(s => s.id === currentStoryId);
-    if (!story) return;
-
+    const story = sessions[sessionId].stories[0]; // Assuming voting for the first story
     const userVote = story.votes.find(v => v.userId === socket.id);
     if (userVote) {
       userVote.value = value;
@@ -88,52 +85,27 @@ io.on('connection', (socket) => {
     updateVotes(story);
   });
 
-  // Reveal votes
-  socket.on('reveal', () => {
-    const story = stories.find(s => s.id === currentStoryId);
-    if (!story) return;
-
-    story.revealed = true;
-    updateVotes(story);
-  });
-
-  // Reset all
-  socket.on('resetall', () => {
-    const story = stories.find(s => s.id === currentStoryId);
-    if (!story) return;
-
-    story.votes = [];
-    story.revealed = false;
-    updateVotes(story);
-  });
-
-  // Reset me
-  socket.on('resetme', () => {
-    const story = stories.find(s => s.id === currentStoryId);
-    if (!story) return;
-
-    story.votes = story.votes.filter(v => v.userId !== socket.id);
-    updateVotes(story);
-  });
-
-  // Add user story
+  // Add new story
   socket.on('addStory', (data) => {
     const { title, description } = data;
-    const story = {
+    const newStory: Story = {
       id: uuidv4(),
       title,
-      description
+      description,
+      votes: [],
+      revealed: false
     };
 
     const session = sessions[sessionId];
     if (session) {
-      session.stories.push(story);
+      session.stories.push(newStory);
       io.emit('storiesUpdated', session.stories);
     }
   });
 
+  // Handle disconnect
   socket.on('disconnect', () => {
-    const story = stories.find(s => s.id === currentStoryId);
+    const story = sessions[sessionId].stories[0]; // Assuming voting for the first story
     if (story) {
       story.votes = story.votes.filter(v => v.userId !== socket.id);
       updateVotes(story);
@@ -141,7 +113,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// Update votes for all clients
+// Function to update votes
 function updateVotes(story: Story) {
   io.emit('update', {
     votes: story.votes,
@@ -149,7 +121,7 @@ function updateVotes(story: Story) {
   });
 }
 
-// REST API
+// REST endpoints
 app.post('/session', (req, res) => {
   const sessionId = uuidv4();
   sessions[sessionId] = { id: sessionId, members: [], stories: [] };
