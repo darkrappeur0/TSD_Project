@@ -46,10 +46,18 @@ function initializeDefaultStory(sessionId: string) {
     sessions[sessionId].stories.push(defaultStory);
   }
 }
+function getSessionBySocket(socketId: string) {
+  return Object.values(sessions).find(session =>
+    session.members.includes(socketId)
+  );
+}
+
+
 
 // Socket events
+// Socket events
 io.on('connection', (socket) => {
-  const sessionId = uuidv4();  // For now creating a new session for each user, you may want to change this
+  const sessionId = uuidv4();  // Pour l'instant créer une nouvelle session pour chaque utilisateur, tu devras probablement le modifier
   if (!sessions[sessionId]) {
     sessions[sessionId] = {
       id: sessionId,
@@ -59,7 +67,7 @@ io.on('connection', (socket) => {
   }
   sessions[sessionId].members.push(socket.id);
 
-  // Initialize default story if none exists
+  // Initialiser l'histoire par défaut si aucune n'existe
   if (sessions[sessionId].stories.length === 0) {
     initializeDefaultStory(sessionId);
   }
@@ -70,22 +78,27 @@ io.on('connection', (socket) => {
     revealed: false
   });
 
-  // Send stories to the client
+  // Envoi des histoires à l'utilisateur
   socket.emit('storiesUpdated', sessions[sessionId].stories);
 
-  // Handle voting event
+  // Gérer l'événement de vote
   socket.on('vote', (value: string) => {
-    const story = sessions[sessionId].stories[0]; // Assuming voting for the first story
+    const session = getSessionBySocket(socket.id);
+    if (!session) return;
+
+    const story = session.stories[0];
     const userVote = story.votes.find(v => v.userId === socket.id);
+
     if (userVote) {
       userVote.value = value;
     } else {
       story.votes.push({ userId: socket.id, value });
     }
-    updateVotes(story);
+
+    updateVotes(session.id, story);  // Assurer que tous les clients reçoivent la mise à jour
   });
 
-  // Add new story
+  // Ajouter une nouvelle histoire
   socket.on('addStory', (data) => {
     const { title, description } = data;
     const newStory: Story = {
@@ -103,23 +116,63 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Handle disconnect
+  // Gérer la déconnexion
   socket.on('disconnect', () => {
-    const story = sessions[sessionId].stories[0]; // Assuming voting for the first story
+    const session = getSessionBySocket(socket.id);
+    if (!session) return;
+
+    const story = session.stories[0]; // Tu peux gérer plus tard la sélection dynamique
     if (story) {
       story.votes = story.votes.filter(v => v.userId !== socket.id);
-      updateVotes(story);
+      updateVotes(session.id, story);
     }
+
+    // Retirer l'utilisateur de la session
+    session.members = session.members.filter(id => id !== socket.id);
+  });
+
+  socket.on('reveal', () => {
+    const session = getSessionBySocket(socket.id);
+    if (!session) return;
+    const story = session.stories[0];
+    story.revealed = true;
+    updateVotes(session.id, story);
+  });
+
+  // Réinitialiser uniquement ce client
+  socket.on('resetme', () => {
+    const session = getSessionBySocket(socket.id);
+    if (!session) return;
+    const story = session.stories[0];
+    story.votes = story.votes.filter(v => v.userId !== socket.id);
+    updateVotes(session.id, story);
+  });
+
+  // Réinitialiser tous les votes
+  socket.on('resetall', () => {
+    const session = getSessionBySocket(socket.id);
+    if (!session) return;
+    const story = session.stories[0];
+    story.votes = [];
+    story.revealed = false;
+    updateVotes(session.id, story);
   });
 });
 
 // Function to update votes
-function updateVotes(story: Story) {
-  io.emit('update', {
-    votes: story.votes,
-    revealed: story.revealed
+function updateVotes(sessionId: string, story: Story) {
+  const session = sessions[sessionId];
+  if (!session) return;
+
+  // Envoie la mise à jour des votes à tous les membres de la session
+  session.members.forEach(socketId => {
+    io.to(socketId).emit('update', {
+      votes: story.votes,
+      revealed: story.revealed
+    });
   });
 }
+
 
 // REST endpoints
 app.post('/session', (req, res) => {
