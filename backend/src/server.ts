@@ -1,6 +1,7 @@
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import cors from 'cors';
 
@@ -8,10 +9,18 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server);
 
+// CORS et JSON
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
 
+// Chemin vers le frontend
+const frontendPath = path.join(__dirname, '..', '..', 'frontend');
+app.use(express.static(frontendPath));  // Cela permet de servir les fichiers statiques du frontend
+
+// Route principale vers index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'index.html'));
+});
 interface Story {
   id: string;
   title: string;
