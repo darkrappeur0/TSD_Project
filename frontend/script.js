@@ -28,9 +28,11 @@ function highlightSelectedCard(card) {
   card.classList.add('selected');
 }
 
+// Fonction pour afficher les votes
 // Display votes
 function renderVotes(data) {
   votesContainer.innerHTML = '';
+
   if (!data?.votes) return;
 
   data.votes.forEach(vote => {
@@ -39,6 +41,11 @@ function renderVotes(data) {
     card.textContent = data.revealed ? vote.value : '?';
     votesContainer.appendChild(card);
   });
+
+  // Si les votes ne sont pas révélés, on retire les "selected"
+  if (!data.revealed) {
+    document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+  }
 }
 
 // Button actions
@@ -50,14 +57,15 @@ function resetme() {
   hasVoted = false;
   socket.emit('resetme');
   document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+  votesContainer.innerHTML = ''; // ← on vide l'affichage
 }
 
 function resetall() {
   hasVoted = false;
   socket.emit('resetall');
   document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+  votesContainer.innerHTML = ''; // ← on vide l'affichage
 }
-
 // Socket event listeners
 socket.on('update', (data) => {
   renderVotes(data);
