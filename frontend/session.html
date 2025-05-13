@@ -12,6 +12,13 @@
 
   <section id="story-section" style="margin-top: 2rem;">
     <h2>User Stories</h2>
+    <div style="margin-bottom: 1rem;">
+      <label for="csv-upload" style="font-weight: bold;">Import Stories (CSV):</label>
+      <input type="file" id="csv-upload" accept=".csv" style="display: none;" />
+      <div id="csv-drop-area" style="border: 2px dashed #888; padding: 1rem; text-align: center; cursor: pointer;">
+        Drag &amp; drop a CSV file here, or click to select
+      </div>
+    </div>
     <input type="text" id="story-title" placeholder="Story title" />
     <input type="text" id="story-description" placeholder="Story description" />
     <button id="add-story-btn">Add Story</button>
@@ -48,6 +55,9 @@
 
   <h2>Previous Stories</h2>
   <ul id="previous-stories"></ul>
+
+  <h3>Export stories</h3>
+  <button id="export-csv-btn">Export</button>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="script.js"></script>
