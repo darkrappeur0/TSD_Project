@@ -78,16 +78,50 @@ function addStory() {
   document.getElementById('story-description').value = '';
 }
 
-// Render story list
+// Render story list as dropdown
 socket.on('storiesUpdated', (stories) => {
-  const storyList = document.getElementById('stories');
-  storyList.innerHTML = '';
+  const storyDropdown = document.getElementById('story-dropdown');
+  storyDropdown.innerHTML = '<option value="">Select a story</option>'; // Reset the dropdown
+
   stories.forEach(story => {
-    const li = document.createElement('li');
-    li.innerHTML = `<strong>${story.title}</strong><br><em>${story.description}</em>`;
-    storyList.appendChild(li);
+    const option = document.createElement('option');
+    option.value = story.id;
+    option.textContent = story.title;
+    storyDropdown.appendChild(option);
   });
 });
+
+// Display selected story details
+function displayStoryDetails() {
+  const selectedStoryId = document.getElementById('story-dropdown').value;
+
+  if (!selectedStoryId) {
+    document.getElementById('selected-story-details').style.display = 'none';
+    return;
+  }
+
+  const story = getStoryById(selectedStoryId);
+
+  if (story) {
+    document.getElementById('story-title-display').textContent = story.title;
+    document.getElementById('story-description-display').textContent = story.description;
+    document.getElementById('selected-story-details').style.display = 'block';
+  }
+}
+
+// Find a story by its ID
+function getStoryById(storyId) {
+  const storyList = document.getElementById('story-dropdown').options;
+  for (let i = 0; i < storyList.length; i++) {
+    if (storyList[i].value === storyId) {
+      return {
+        title: storyList[i].textContent,
+        description: document.getElementById('story-description').value,
+      };
+    }
+  }
+  return null;
+}
 
 // Init
 renderDeck();

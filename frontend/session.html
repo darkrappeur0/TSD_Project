@@ -19,10 +19,19 @@
     <button onclick="addStory()">Add Story</button>
   </div>
 
-  <!-- List of user stories -->
-  <div id="story-list" class="story-list">
-    <h3>User Stories</h3>
-    <ul id="stories"></ul>
+  <!-- User story dropdown -->
+  <div>
+    <h3>Select a User Story</h3>
+    <select id="story-dropdown" onchange="displayStoryDetails()">
+      <option value="">Select a story</option>
+    </select>
+  </div>
+
+  <!-- Selected story details -->
+  <div id="selected-story-details" class="story-details" style="display:none;">
+    <h4>Story Details:</h4>
+    <p><strong>Title:</strong> <span id="story-title-display"></span></p>
+    <p><strong>Description:</strong> <span id="story-description-display"></span></p>
   </div>
 
   <!-- Voting deck -->
