@@ -14,6 +14,13 @@
   <!-- User story input -->
   <div class="story-form">
     <h2>Add a User Story</h2>
+        <div style="margin-bottom: 1rem;">Add commentMore actions
+      <label for="csv-upload" style="font-weight: bold;">Import Stories (CSV):</label>
+      <input type="file" id="csv-upload" accept=".csv" style="display: none;" />
+      <div id="csv-drop-area" style="border: 2px dashed #888; padding: 1rem; text-align: center; cursor: pointer;">
+        Drag &amp; drop a CSV file here, or click to select
+      </div>
+    </div>
     <input type="text" id="story-title" placeholder="Story Title" />
     <textarea id="story-description" placeholder="Story Description"></textarea>
     <button onclick="addStory()">Add Story</button>
@@ -33,6 +40,11 @@
     <p><strong>Title:</strong> <span id="story-title-display"></span></p>
     <p><strong>Description:</strong> <span id="story-description-display"></span></p>
   </div>
+
+  <h3>Export stories</h3>
+  <button id="export-csv-btn">Export</button>
+
+
 
   <!-- Voting deck -->
   <div id="deck" class="deck"></div>
