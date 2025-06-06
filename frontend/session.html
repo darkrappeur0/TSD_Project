@@ -1,24 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<<<<<<< HEAD
   <meta charset="UTF-8" />
   <title>Planning Poker</title>
   <link rel="stylesheet" href="style.css" />
+=======
+  <meta charset="UTF-8">
+  <title>Planning Poker</title>
+  <link rel="stylesheet" href="style.css">
+>>>>>>> temp-test
 </head>
 <body>
   <h1>Planning Poker</h1>
 
+<<<<<<< HEAD
   <div id="session-id" class="session-id"></div>
 
   <section id="story-section" style="margin-top: 2rem;">
     <h2>User Stories</h2>
     <div style="margin-bottom: 1rem;">
+=======
+  <!-- Session ID display -->
+  <div id="session-id" class="session-id"></div>
+
+  <!-- User story input -->
+  <div class="story-form">
+    <h2>Add a User Story</h2>
+        <div style="margin-bottom: 1rem;">Add commentMore actions
+>>>>>>> temp-test
       <label for="csv-upload" style="font-weight: bold;">Import Stories (CSV):</label>
       <input type="file" id="csv-upload" accept=".csv" style="display: none;" />
       <div id="csv-drop-area" style="border: 2px dashed #888; padding: 1rem; text-align: center; cursor: pointer;">
         Drag &amp; drop a CSV file here, or click to select
       </div>
     </div>
+<<<<<<< HEAD
     <input type="text" id="story-title" placeholder="Story title" />
     <input type="text" id="story-description" placeholder="Story description" />
     <button id="add-story-btn">Add Story</button>
@@ -45,12 +62,44 @@
   </div>
 
   <div id="deck" class="deck"></div>
+=======
+    <input type="text" id="story-title" placeholder="Story Title" />
+    <textarea id="story-description" placeholder="Story Description"></textarea>
+    <button onclick="addStory()">Add Story</button>
+  </div>
+
+  <!-- User story dropdown -->
+  <div>
+    <h3>Select a User Story</h3>
+    <select id="story-dropdown" onchange="displayStoryDetails()">
+      <option value="">Select a story</option>
+    </select>
+  </div>
+
+  <!-- Selected story details -->
+  <div id="selected-story-details" class="story-details" style="display:none;">
+    <h4>Story Details:</h4>
+    <p><strong>Title:</strong> <span id="story-title-display"></span></p>
+    <p><strong>Description:</strong> <span id="story-description-display"></span></p>
+  </div>
+
+  <h3>Export stories</h3>
+  <button id="export-csv-btn">Export</button>
+
+
+
+  <!-- Voting deck -->
+  <div id="deck" class="deck"></div>
+
+  <!-- Controls -->
+>>>>>>> temp-test
   <div class="controls">
     <button onclick="reveal()">Reveal</button>
     <button onclick="resetme()">Reset me</button>
     <button onclick="resetall()">New estimation</button>
   </div>
 
+<<<<<<< HEAD
   <div id="votes" class="votes"></div>
 
   <h2>Previous Stories</h2>
@@ -60,6 +109,19 @@
   <button id="export-csv-btn">Export</button>
 
   <script src="/socket.io/socket.io.js"></script>
+=======
+  <!-- Vote results -->
+  <div id="votes" class="votes"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      if (typeof renderDeck === 'function') {
+        renderDeck();
+      }
+    });
+  </script>
+>>>>>>> temp-test
   <script src="script.js"></script>
 </body>
 </html>

@@ -15,7 +15,11 @@ let stories = [];
 let selectedStory = null;
 let revealedVotes = [];
 
+<<<<<<< HEAD
 // Render voting cards
+=======
+// ---- VOTES & CARDS ----
+>>>>>>> temp-test
 function renderDeck() {
   deckContainer.innerHTML = '';
   deck.forEach(value => {
@@ -33,12 +37,16 @@ function renderDeck() {
   });
 }
 
+<<<<<<< HEAD
 // Highlight selected card
+=======
+>>>>>>> temp-test
 function highlightSelectedCard(card) {
   document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
   card.classList.add('selected');
 }
 
+<<<<<<< HEAD
 // Display votes
 function renderVotes(data) {
   votesContainer.innerHTML = '';
@@ -134,6 +142,84 @@ async function fetchStories() {
 }
 
 // Drag and drop functionality for CSV upload
+=======
+function renderVotes(data) {
+  votesContainer.innerHTML = '';
+  if (!data?.votes) return;
+
+  data.votes.forEach(vote => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.textContent = data.revealed ? vote.value : '?';
+    votesContainer.appendChild(card);
+  });
+
+  if (!data.revealed) {
+    document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+  }
+}
+
+function reveal() {
+  socket.emit('reveal');
+}
+
+function resetme() {
+  hasVoted = false;
+  socket.emit('resetme');
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+  votesContainer.innerHTML = '';
+}
+
+function resetall() {
+  hasVoted = false;
+  socket.emit('resetall');
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+  votesContainer.innerHTML = '';
+}
+
+// ---- STORY MANAGEMENT ----
+function addStory() {
+  const title = document.getElementById('story-title').value;
+  const description = document.getElementById('story-description').value;
+  if (!title || !description) {
+    alert("Please enter both title and description.");
+    return;
+  }
+
+  socket.emit('addStory', { title, description });
+  document.getElementById('story-title').value = '';
+  document.getElementById('story-description').value = '';
+}
+
+socket.on('storiesUpdated', (stories) => {
+  const storyDropdown = document.getElementById('story-dropdown');
+  storyDropdown.innerHTML = '<option value="">Select a story</option>';
+
+  stories.forEach(story => {
+    const option = document.createElement('option');
+    option.value = story.id;
+    option.textContent = story.title;
+    option.dataset.description = story.description;
+    storyDropdown.appendChild(option);
+  });
+});
+
+function displayStoryDetails() {
+  const dropdown = document.getElementById('story-dropdown');
+  const selectedOption = dropdown.options[dropdown.selectedIndex];
+
+  if (!selectedOption || !selectedOption.value) {
+    document.getElementById('selected-story-details').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('story-title-display').textContent = selectedOption.textContent;
+  document.getElementById('story-description-display').textContent = selectedOption.dataset.description || '';
+  document.getElementById('selected-story-details').style.display = 'block';
+}
+
+// ---- CSV UPLOAD & EXPORT ----
+>>>>>>> temp-test
 const dropArea = document.getElementById('csv-drop-area');
 const fileInput = document.getElementById('csv-upload');
 
@@ -170,12 +256,17 @@ fileInput.addEventListener('change', (e) => {
 
 async function readCSVFile(file) {
   const reader = new FileReader();
+<<<<<<< HEAD
   reader.onload = async function(e) {
+=======
+  reader.onload = function(e) {
+>>>>>>> temp-test
     const text = e.target.result;
     const lines = text.split('\n').filter(line => line.trim());
     for (const line of lines) {
       const [title, description] = line.split(';').map(s => s.trim());
       if (!title || !description) continue;
+<<<<<<< HEAD
       await fetch(`/session/${sessionId}/story`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -188,32 +279,54 @@ async function readCSVFile(file) {
 }
 
 // Export stories to CSV
+=======
+      socket.emit('addStory', { title, description });
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Export to CSV
+>>>>>>> temp-test
 document.addEventListener('DOMContentLoaded', () => {
   const exportBtn = document.getElementById('export-csv-btn');
   if (exportBtn) {
     exportBtn.addEventListener('click', async () => {
+<<<<<<< HEAD
       // Fetch latest stories
       const res = await fetch(`/session/${sessionId}/stories`);
       const exportStories = await res.json();
       // Prepare CSV content (empty if no stories)
+=======
+      const res = await fetch(`/session/${sessionId}/stories`);
+      const exportStories = await res.json();
+>>>>>>> temp-test
       const csvRows = exportStories.length
         ? exportStories.map(s => `"${s.title.replace(/"/g, '""')}";"${s.description.replace(/"/g, '""')}"`)
         : [];
       const csvContent = csvRows.join('\n');
+<<<<<<< HEAD
       // Create blob and download
+=======
+>>>>>>> temp-test
       const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = 'stories.csv';
       document.body.appendChild(a);
+<<<<<<< HEAD
       a.click(); // This triggers the download
+=======
+      a.click();
+>>>>>>> temp-test
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     });
   }
 });
 
+<<<<<<< HEAD
 
 // Reveal/reset
 function reveal() {
@@ -237,10 +350,15 @@ socket.on('sessionID', id => {
   fetchStories();
 });
 socket.on('update', data => {
+=======
+// ---- SOCKET EVENT LISTENING ----
+socket.on('update', (data) => {
+>>>>>>> temp-test
   renderVotes(data);
   if (data.votes.length === 0) hasVoted = false;
 });
 
+<<<<<<< HEAD
 // Story selection
 storySelect.addEventListener('change', () => {
   const selectedId = storySelect.value;
@@ -280,4 +398,7 @@ document.getElementById('delete-story-btn').addEventListener('click', async () =
 });
 
 // Initialize
+=======
+// ---- INIT ----
+>>>>>>> temp-test
 renderDeck();
