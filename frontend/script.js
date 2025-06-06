@@ -15,11 +15,7 @@ let stories = [];
 let selectedStory = null;
 let revealedVotes = [];
 
-<<<<<<< HEAD
 // Render voting cards
-=======
-// ---- VOTES & CARDS ----
->>>>>>> temp-test
 function renderDeck() {
   deckContainer.innerHTML = '';
   deck.forEach(value => {
@@ -37,112 +33,11 @@ function renderDeck() {
   });
 }
 
-<<<<<<< HEAD
-// Highlight selected card
-=======
->>>>>>> temp-test
 function highlightSelectedCard(card) {
   document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
   card.classList.add('selected');
 }
 
-<<<<<<< HEAD
-// Display votes
-function renderVotes(data) {
-  votesContainer.innerHTML = '';
-  if (!data?.votes) return;
-
-  revealedVotes = data.revealed ? data.votes : [];
-
-  data.votes.forEach(vote => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.textContent = data.revealed ? vote.value : '?';
-    votesContainer.appendChild(card);
-  });
-
-  // Store previous story and estimation
-  if (data.revealed && selectedStory) {
-    const estimations = revealedVotes.map(v => parseInt(v.value)).filter(v => !isNaN(v));
-    const avg = estimations.reduce((a, b) => a + b, 0) / (estimations.length || 1);
-    const li = document.createElement('li');
-    li.textContent = `${selectedStory.title} - Avg: ${isNaN(avg) ? 'N/A' : avg.toFixed(2)}`;
-    previousStoriesList.appendChild(li);
-  }
-}
-
-// Story creation
-document.getElementById('add-story-btn').addEventListener('click', async () => {
-  const title = document.getElementById('story-title').value.trim();
-  const description = document.getElementById('story-description').value.trim();
-
-  if (!title || !description || !sessionId) {
-    storyErrorMsg.textContent = 'Please fill out both title and description.';
-    return;
-  }
-
-  const existing = stories.find(s => s.title.toLowerCase() === title.toLowerCase());
-  if (existing) {
-    storyErrorMsg.textContent = 'A story with this title already exists.';
-    return;
-  }
-
-  storyErrorMsg.textContent = '';
-
-  await fetch(`/session/${sessionId}/stories`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title, description }),
-  });
-
-  document.getElementById('story-title').value = '';
-  document.getElementById('story-description').value = '';
-
-  fetchStories();
-});
-
-// Story deletion
-document.getElementById('delete-story-btn').addEventListener('click', async () => {
-  const titleToDelete = document.getElementById('delete-story-title').value.trim();
-  if (!titleToDelete || !sessionId) return;
-
-  const storyToDelete = stories.find(s => s.title.toLowerCase() === titleToDelete.toLowerCase());
-  if (!storyToDelete) {
-    storyErrorMsg.textContent = 'Story not found.';
-    return;
-  }
-
-  storyErrorMsg.textContent = '';
-
-  await fetch(`/session/${sessionId}/story/${storyToDelete.id}`, {
-    method: 'DELETE'
-  });
-
-  document.getElementById('delete-story-title').value = '';
-  fetchStories();
-});
-
-// Update story dropdown
-function updateStoryDropdown() {
-  storySelect.innerHTML = '<option value="">-- Select Story --</option>';
-  stories.forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s.id;
-    opt.textContent = s.title;
-    storySelect.appendChild(opt);
-  });
-}
-
-// Fetch all stories
-async function fetchStories() {
-  if (!sessionId) return;
-  const res = await fetch(`/session/${sessionId}/stories`);
-  stories = await res.json();
-  updateStoryDropdown();
-}
-
-// Drag and drop functionality for CSV upload
-=======
 function renderVotes(data) {
   votesContainer.innerHTML = '';
   if (!data?.votes) return;
@@ -219,7 +114,7 @@ function displayStoryDetails() {
 }
 
 // ---- CSV UPLOAD & EXPORT ----
->>>>>>> temp-test
+
 const dropArea = document.getElementById('csv-drop-area');
 const fileInput = document.getElementById('csv-upload');
 
@@ -256,109 +151,47 @@ fileInput.addEventListener('change', (e) => {
 
 async function readCSVFile(file) {
   const reader = new FileReader();
-<<<<<<< HEAD
   reader.onload = async function(e) {
-=======
-  reader.onload = function(e) {
->>>>>>> temp-test
     const text = e.target.result;
     const lines = text.split('\n').filter(line => line.trim());
     for (const line of lines) {
       const [title, description] = line.split(';').map(s => s.trim());
       if (!title || !description) continue;
-<<<<<<< HEAD
-      await fetch(`/session/${sessionId}/story`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description }),
-      });
-    }
-  };
-  fetchStories();
-  reader.readAsText(file);
-}
-
-// Export stories to CSV
-=======
       socket.emit('addStory', { title, description });
     }
   };
   reader.readAsText(file);
 }
 
-// Export to CSV
->>>>>>> temp-test
 document.addEventListener('DOMContentLoaded', () => {
   const exportBtn = document.getElementById('export-csv-btn');
   if (exportBtn) {
     exportBtn.addEventListener('click', async () => {
-<<<<<<< HEAD
-      // Fetch latest stories
       const res = await fetch(`/session/${sessionId}/stories`);
       const exportStories = await res.json();
-      // Prepare CSV content (empty if no stories)
-=======
-      const res = await fetch(`/session/${sessionId}/stories`);
-      const exportStories = await res.json();
->>>>>>> temp-test
       const csvRows = exportStories.length
         ? exportStories.map(s => `"${s.title.replace(/"/g, '""')}";"${s.description.replace(/"/g, '""')}"`)
         : [];
       const csvContent = csvRows.join('\n');
-<<<<<<< HEAD
-      // Create blob and download
-=======
->>>>>>> temp-test
       const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = 'stories.csv';
       document.body.appendChild(a);
-<<<<<<< HEAD
       a.click(); // This triggers the download
-=======
-      a.click();
->>>>>>> temp-test
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     });
   }
 });
 
-<<<<<<< HEAD
-
-// Reveal/reset
-function reveal() {
-  socket.emit('reveal');
-}
-function resetme() {
-  hasVoted = false;
-  socket.emit('resetme');
-  document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
-}
-function resetall() {
-  hasVoted = false;
-  socket.emit('resetall');
-  document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
-}
-
-// Socket event listeners
-socket.on('sessionID', id => {
-  sessionId = id;
-  document.getElementById('session-id').textContent = `Session ID: ${id}`;
-  fetchStories();
-});
-socket.on('update', data => {
-=======
 // ---- SOCKET EVENT LISTENING ----
 socket.on('update', (data) => {
->>>>>>> temp-test
   renderVotes(data);
   if (data.votes.length === 0) hasVoted = false;
 });
 
-<<<<<<< HEAD
 // Story selection
 storySelect.addEventListener('change', () => {
   const selectedId = storySelect.value;
@@ -398,7 +231,4 @@ document.getElementById('delete-story-btn').addEventListener('click', async () =
 });
 
 // Initialize
-=======
-// ---- INIT ----
->>>>>>> temp-test
 renderDeck();
