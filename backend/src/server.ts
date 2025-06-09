@@ -10,7 +10,7 @@ import { WebSocketServer } from 'ws';
 dotenv.config();
 
 const app = express();
-const port = 4000;
+const port = process.env.PORT || 4000;
 
 // Middlewares
 app.use(cors());
@@ -21,27 +21,26 @@ app.use('/api/stories', storyRoutes);
 app.use('/api/users', userRoutes);
 
 // DB connection
-mongoose.connect(process.env.MONGO_URL || 'mongodb://localhost/tsd', {})
-    .then(() => console.log('MongoDB connected'))
-    .catch(err => console.error('MongoDB error:', err));
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost/tsd', {})
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.error('MongoDB error:', err));
 
 // HTTP server
 const server = app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+  console.log(`Server running at http://localhost:${port}`);
 });
 
 // WebSocket server
 const wss = new WebSocketServer({ server });
-
 wss.on('connection', ws => {
-    console.log('New WebSocket connection');
-
-    ws.on('message', message => {
-        console.log(`WS message received: ${message}`);
-        wss.clients.forEach(client => {
-            if (client !== ws && client.readyState === ws.OPEN) {
-                client.send(message);
-            }
-        });
+  console.log('New WebSocket connection');
+  
+  ws.on('message', message => {
+    console.log(`WS message received: ${message}`);
+    wss.clients.forEach(client => {
+      if (client !== ws && client.readyState === ws.OPEN) {
+        client.send(message);
+      }
     });
+  });
 });
