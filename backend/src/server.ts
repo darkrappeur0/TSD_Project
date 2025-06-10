@@ -49,7 +49,7 @@ const UserSchema = new mongoose.Schema({
 // Session Schema
 const SessionSchema = new mongoose.Schema({
   sessionId: { type: String, required: true, unique: true },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Changé de userId à ownerId
   createdAt: { type: Date, default: Date.now },
   stories: [{
     id: String,
@@ -59,7 +59,8 @@ const SessionSchema = new mongoose.Schema({
     estimatedAt: Date
   }],
   participants: [String], // usernames
-  isActive: { type: Boolean, default: true }
+  isActive: { type: Boolean, default: true },
+  isPublic: { type: Boolean, default: true } // Ajout pour sessions publiques
 });
 
 const User = mongoose.model('User', UserSchema);
@@ -76,6 +77,11 @@ app.use(express.static(frontendPath));
 // JWT Middleware
 interface AuthRequest extends Request {
   user?: any;
+}
+
+function isSessionOwner(sessionId: string, userId: string): boolean {
+  const session = sessions[sessionId];
+  return session && session.userId === userId;
 }
 
 const authenticateToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -109,6 +115,7 @@ const sessions: {
     userId: string;
     members: Array<{socketId: string, userName?: string}>;
     stories: Story[];
+    currentStoryId?: string; 
   };
 } = {};
 
@@ -219,7 +226,7 @@ app.get('/api/profile', authenticateToken, async (req: AuthRequest, res) => {
 
 app.get('/api/sessions', authenticateToken, async (req: AuthRequest, res) => {
   try {
-    const userSessions = await SessionModel.find({ userId: req.user._id })
+    const userSessions = await SessionModel.find({ ownerId: req.user._id }) // Changé de userId à ownerId
       .sort({ createdAt: -1 })
       .limit(20);
     
@@ -237,17 +244,19 @@ app.post('/api/session', authenticateToken, async (req: AuthRequest, res) => {
     // Create session in memory
     sessions[sessionId] = { 
       id: sessionId, 
-      userId: req.user._id.toString(),
+      userId: req.user._id.toString(), // Ceci reste pour le propriétaire en mémoire
       members: [], 
-      stories: [] 
+      stories: [],
+      currentStoryId: undefined
     };
 
-    // Create session in database
+    // Create session in database avec ownerId
     const sessionDoc = new SessionModel({
       sessionId,
-      userId: req.user._id,
+      ownerId: req.user._id, // Changé de userId à ownerId
       stories: [],
-      participants: []
+      participants: [],
+      isPublic: true // Sessions publiques par défaut
     });
     await sessionDoc.save();
 
@@ -261,22 +270,23 @@ app.post('/api/session', authenticateToken, async (req: AuthRequest, res) => {
 
 app.get('/api/session/:id', authenticateToken, async (req: AuthRequest, res) => {
   try {
-    const sessionDoc = await SessionModel.findOne({ 
-      sessionId: req.params.id,
-      userId: req.user._id 
-    });
+    const sessionDoc = await SessionModel.findOne({ sessionId: req.params.id });
     
     if (!sessionDoc) {
       return res.status(404).json({ message: 'Session not found' });
     }
 
     const session = sessions[req.params.id];
+    const isOwner = sessionDoc.ownerId.toString() === req.user._id.toString();
+    
     res.json({ 
       id: req.params.id, 
       memberCount: session ? session.members.length : 0,
       storyCount: sessionDoc.stories.length,
       createdAt: sessionDoc.createdAt,
-      isActive: sessionDoc.isActive
+      isActive: sessionDoc.isActive,
+      isOwner: isOwner,
+      participants: sessionDoc.participants
     });
   } catch (error) {
     console.error('Error fetching session:', error);
@@ -285,6 +295,20 @@ app.get('/api/session/:id', authenticateToken, async (req: AuthRequest, res) => 
 });
 
 app.get('/api/session/:id/stories', authenticateToken, async (req: AuthRequest, res) => {
+  try {
+    const sessionDoc = await SessionModel.findOne({ sessionId: req.params.id });
+    
+    if (!sessionDoc) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    res.json(sessionDoc.stories || []);
+  } catch (error) {
+    console.error('Error fetching session stories:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+app.get('/api/session/:id/current', authenticateToken, async (req: AuthRequest, res) => {
   try {
     const sessionDoc = await SessionModel.findOne({ 
       sessionId: req.params.id,
@@ -295,9 +319,39 @@ app.get('/api/session/:id/stories', authenticateToken, async (req: AuthRequest, 
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    res.json(sessionDoc.stories || []);
+    const memorySession = sessions[req.params.id];
+    
+    res.json({ 
+      id: req.params.id,
+      stories: sessionDoc.stories || [],
+      currentStoryId: memorySession?.currentStoryId || null,
+      memberCount: memorySession ? memorySession.members.length : 0,
+      isActive: sessionDoc.isActive
+    });
   } catch (error) {
-    console.error('Error fetching session stories:', error);
+    console.error('Error fetching session:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+app.get('/api/session/:id/join', authenticateToken, async (req: AuthRequest, res) => {
+  try {
+    const sessionDoc = await SessionModel.findOne({ sessionId: req.params.id });
+    
+    if (!sessionDoc) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    if (!sessionDoc.isActive) {
+      return res.status(403).json({ message: 'Session is not active' });
+    }
+
+    res.json({ 
+      message: 'Session accessible',
+      sessionId: req.params.id,
+      canJoin: true
+    });
+  } catch (error) {
+    console.error('Error checking session access:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -365,239 +419,320 @@ io.on('connection', (socket: Socket) => {
   console.log(`User connected: ${socket.id} (${authenticatedSocket.user.username})`);
 
   socket.on('joinSession', async (data) => {
-    const { sessionId } = data;
-    const userName = authenticatedSocket.user.username;
+  const { sessionId } = data;
+  const userName = authenticatedSocket.user.username;
+  
+  console.log(`User ${userName} (${socket.id}) trying to join session ${sessionId}`);
+
+  try {
+    // Chercher la session dans la DB (sans restriction d'utilisateur)
+    const sessionDoc = await SessionModel.findOne({ sessionId });
+
+    if (!sessionDoc) {
+      socket.emit('error', { message: 'Session not found' });
+      return;
+    }
+
+    // Vérifier si la session est active
+    if (!sessionDoc.isActive) {
+      socket.emit('error', { message: 'Session is not active' });
+      return;
+    }
+
+    // Check if session exists in memory, create if not
+    if (!sessions[sessionId]) {
+  sessions[sessionId] = {
+    id: sessionId,
+    userId: sessionDoc.ownerId.toString(),
+    members: [],
+    stories: sessionDoc.stories.map(story => ({
+      id: story.id,
+      title: story.title || '', // Default to empty string if null/undefined
+      description: story.description || '', // Default to empty string if null/undefined
+      votes: [],
+      revealed: false
+    })) || [],
+    currentStoryId: undefined
+  };
+}
+
+    socket.join(sessionId);
     
-    console.log(`User ${userName} (${socket.id}) trying to join session ${sessionId}`);
-
-    try {
-      // Check if session exists and belongs to user
-      const sessionDoc = await SessionModel.findOne({ 
-        sessionId,
-        userId: authenticatedSocket.user._id 
-      });
-
-      if (!sessionDoc) {
-        socket.emit('error', { message: 'Session not found or access denied' });
-        return;
-      }
-
-      // Check if session exists in memory
-      if (!sessions[sessionId]) {
-        sessions[sessionId] = {
-          id: sessionId,
-          userId: authenticatedSocket.user._id.toString(),
-          members: [],
-          stories: []
-        };
-      }
-
-      // Check if user owns this session
-      if (sessions[sessionId].userId !== authenticatedSocket.user._id.toString()) {
-        socket.emit('error', { message: 'Access denied' });
-        return;
-      }
-
-      socket.join(sessionId);
-      
+    // Ajouter le membre s'il n'est pas déjà présent
+    const existingMember = sessions[sessionId].members.find(m => m.socketId === socket.id);
+    if (!existingMember) {
       sessions[sessionId].members.push({
         socketId: socket.id,
         userName: userName
       });
-
-      // Update participants in database
-      if (!sessionDoc.participants.includes(userName)) {
-        sessionDoc.participants.push(userName);
-        await sessionDoc.save();
-      }
-
-      socket.emit('sessionJoined', { 
-        sessionId, 
-        userName,
-        stories: sessions[sessionId].stories 
-      });
-
-      const currentStory = sessions[sessionId].stories[0];
-      if (currentStory) {
-        socket.emit('update', {
-          votes: currentStory.votes,
-          revealed: currentStory.revealed
-        });
-      }
-
-      socket.to(sessionId).emit('memberJoined', { 
-        userName,
-        memberCount: sessions[sessionId].members.length 
-      });
-
-    } catch (error) {
-      console.error('Error joining session:', error);
-      socket.emit('error', { message: 'Server error' });
     }
-  });
+
+    // Update participants in database
+    if (!sessionDoc.participants.includes(userName)) {
+      sessionDoc.participants.push(userName);
+      await sessionDoc.save();
+    }
+
+    socket.emit('sessionJoined', { 
+      sessionId, 
+      userName,
+      stories: sessions[sessionId].stories,
+      isOwner: sessionDoc.ownerId.toString() === authenticatedSocket.user._id.toString()
+    });
+
+    const currentStory = sessions[sessionId].currentStoryId 
+      ? sessions[sessionId].stories.find(s => s.id === sessions[sessionId].currentStoryId)
+      : sessions[sessionId].stories[0];
+      
+    if (currentStory) {
+      socket.emit('update', {
+        votes: currentStory.votes,
+        revealed: currentStory.revealed
+      });
+    }
+
+    socket.to(sessionId).emit('memberJoined', { 
+      userName,
+      memberCount: sessions[sessionId].members.length 
+    });
+
+    console.log(`User ${userName} successfully joined session ${sessionId}`);
+
+  } catch (error) {
+    console.error('Error joining session:', error);
+    socket.emit('error', { message: 'Server error' });
+  }
+});
 
   socket.on('vote', (value: string) => {
-    const session = getSessionBySocket(socket.id);
-    if (!session) {
-      socket.emit('error', { message: 'Not in a session' });
-      return;
-    }
+  const session = getSessionBySocket(socket.id);
+  if (!session) {
+    socket.emit('error', { message: 'Not in a session' });
+    return;
+  }
 
-    const story = session.stories[0];
-    if (!story) return;
+  // Utilisez currentStoryId au lieu de stories[0]
+  const story = session.currentStoryId 
+    ? session.stories.find(s => s.id === session.currentStoryId)
+    : session.stories[0]; // Fallback pour compatibilité
 
-    const member = session.members.find(m => m.socketId === socket.id);
-    const userVote = story.votes.find(v => v.userId === socket.id);
+  if (!story) {
+    socket.emit('error', { message: 'No story selected for voting' });
+    return;
+  }
 
-    if (userVote) {
-      userVote.value = value;
-    } else {
-      story.votes.push({ 
-        userId: socket.id, 
-        userName: member?.userName,
-        value 
-      });
-    }
+  const member = session.members.find(m => m.socketId === socket.id);
+  const userVote = story.votes.find(v => v.userId === socket.id);
 
-    io.to(session.id).emit('update', {
-      votes: story.votes,
-      revealed: story.revealed
+  if (userVote) {
+    userVote.value = value;
+  } else {
+    story.votes.push({ 
+      userId: socket.id, 
+      userName: member?.userName,
+      value 
     });
+  }
 
-    console.log(`Vote received: ${value} from ${member?.userName || socket.id}`);
+  io.to(session.id).emit('update', {
+    votes: story.votes,
+    revealed: story.revealed
   });
+
+  console.log(`Vote received: ${value} from ${member?.userName || socket.id}`);
+});
 
   socket.on('addStory', async (data) => {
-    const { title, description } = data;
-    const session = getSessionBySocket(socket.id);
-    
-    if (!session) {
-      socket.emit('error', { message: 'Not in a session' });
-      return;
-    }
+  const { title, description } = data;
+  const session = getSessionBySocket(socket.id);
+  
+  if (!session) {
+    socket.emit('error', { message: 'Not in a session' });
+    return;
+  }
 
-    const newStory: Story = {
-      id: uuidv4(),
-      title,
-      description,
-      votes: [],
-      revealed: false
-    };
+  // Seul le propriétaire peut ajouter des stories (optionnel)
+  const sessionDoc = await SessionModel.findOne({ sessionId: session.id });
+  if (sessionDoc && sessionDoc.ownerId.toString() !== authenticatedSocket.user._id.toString()) {
+    socket.emit('error', { message: 'Only session owner can add stories' });
+    return;
+  }
 
-    session.stories.push(newStory);
-    
-    // Save to database
-    try {
-      await SessionModel.updateOne(
-        { sessionId: session.id },
-        { 
-          $push: { 
-            stories: {
-              id: newStory.id,
-              title,
-              description,
-              finalEstimate: '',
-              estimatedAt: null
-            }
+  const newStory: Story = {
+    id: uuidv4(),
+    title,
+    description,
+    votes: [],
+    revealed: false
+  };
+
+  session.stories.push(newStory);
+  
+  // Save to database
+  try {
+    await SessionModel.updateOne(
+      { sessionId: session.id },
+      { 
+        $push: { 
+          stories: {
+            id: newStory.id,
+            title,
+            description,
+            finalEstimate: '',
+            estimatedAt: null
           }
         }
-      );
-    } catch (error) {
-      console.error('Error saving story:', error);
+      }
+    );
+  } catch (error) {
+    console.error('Error saving story:', error);
+  }
+  
+  io.to(session.id).emit('storiesUpdated', session.stories);
+  console.log(`Story added: ${title} to session ${session.id}`);
+});
+
+  socket.on('selectStory', async (data) => {
+  const { storyId } = data;
+  const session = getSessionBySocket(socket.id);
+  
+  if (!session) {
+    socket.emit('error', { message: 'Not in a session' });
+    return;
+  }
+
+  const story = session.stories.find(s => s.id === storyId);
+  if (!story) {
+    socket.emit('error', { message: 'Story not found' });
+    return;
+  }
+
+  // Set current story
+  session.currentStoryId = storyId;
+  
+  // Reset votes for new story
+  story.votes = [];
+  story.revealed = false;
+  
+  io.to(session.id).emit('storySelected', {
+    story: {
+      id: story.id,
+      title: story.title,
+      description: story.description
     }
-    
-    io.to(session.id).emit('storiesUpdated', session.stories);
-    console.log(`Story added: ${title} to session ${session.id}`);
   });
+  
+  io.to(session.id).emit('update', {
+    votes: story.votes,
+    revealed: story.revealed
+  });
+
+  console.log(`Story selected: ${story.title} in session ${session.id}`);
+});
 
   socket.on('reveal', async () => {
-    const session = getSessionBySocket(socket.id);
-    if (!session) return;
+  const session = getSessionBySocket(socket.id);
+  if (!session) return;
+  
+  const story = session.currentStoryId 
+    ? session.stories.find(s => s.id === session.currentStoryId)
+    : session.stories[0];
     
-    const story = session.stories[0];
-    if (!story) return;
+  if (!story) return;
 
-    story.revealed = true;
-    
-    // Calculate final estimate (most common vote)
-    const voteCounts = story.votes.reduce((acc: any, vote) => {
-      if (vote.value) {
-        acc[vote.value] = (acc[vote.value] || 0) + 1;
-      }
-      return acc;
-    }, {});
-
-    const finalEstimate = Object.keys(voteCounts).reduce((a, b) => 
-      voteCounts[a] > voteCounts[b] ? a : b, '');
-
-    if (finalEstimate) {
-      await saveSessionEstimate(session.id, story.id, finalEstimate);
+  story.revealed = true;
+  
+  // Calculate final estimate (most common vote)
+  const voteCounts = story.votes.reduce((acc: any, vote) => {
+    if (vote.value) {
+      acc[vote.value] = (acc[vote.value] || 0) + 1;
     }
-    
-    io.to(session.id).emit('update', {
-      votes: story.votes,
-      revealed: story.revealed,
-      finalEstimate
-    });
-  });
+    return acc;
+  }, {});
 
-  socket.on('resetme', () => {
-    const session = getSessionBySocket(socket.id);
-    if (!session) return;
-    
-    const story = session.stories[0];
-    if (!story) return;
+  const finalEstimate = Object.keys(voteCounts).reduce((a, b) => 
+    voteCounts[a] > voteCounts[b] ? a : b, '');
 
-    story.votes = story.votes.filter(v => v.userId !== socket.id);
-    
-    io.to(session.id).emit('update', {
-      votes: story.votes,
-      revealed: story.revealed
-    });
-  });
-
-  socket.on('resetall', () => {
-    const session = getSessionBySocket(socket.id);
-    if (!session) return;
-    
-    const story = session.stories[0];
-    if (!story) return;
-
-    story.votes = [];
-    story.revealed = false;
-    
-    io.to(session.id).emit('update', {
-      votes: story.votes,
-      revealed: story.revealed
-    });
-  });
-
-  socket.on('disconnect', () => {
-    const session = getSessionBySocket(socket.id);
-    if (!session) return;
-
-    console.log(`User disconnected: ${socket.id}`);
-
-    const story = session.stories[0];
-    if (story) {
-      story.votes = story.votes.filter(v => v.userId !== socket.id);
-      io.to(session.id).emit('update', {
-        votes: story.votes,
-        revealed: story.revealed
-      });
-    }
-
-    const member = session.members.find(m => m.socketId === socket.id);
-    session.members = session.members.filter(m => m.socketId !== socket.id);
-    
-    if (member) {
-      socket.to(session.id).emit('memberLeft', { 
-        userName: member.userName,
-        memberCount: session.members.length 
-      });
-    }
+  if (finalEstimate) {
+    await saveSessionEstimate(session.id, story.id, finalEstimate);
+  }
+  
+  io.to(session.id).emit('update', {
+    votes: story.votes,
+    revealed: story.revealed,
+    finalEstimate
   });
 });
+
+  socket.on('resetme', () => {
+  const session = getSessionBySocket(socket.id);
+  if (!session) return;
+  
+  const story = session.currentStoryId 
+    ? session.stories.find(s => s.id === session.currentStoryId)
+    : session.stories[0];
+    
+  if (!story) return;
+
+  story.votes = story.votes.filter(v => v.userId !== socket.id);
+  
+  io.to(session.id).emit('update', {
+    votes: story.votes,
+    revealed: story.revealed
+  });
+});
+
+  socket.on('resetall', () => {
+  const session = getSessionBySocket(socket.id);
+  if (!session) return;
+  
+  const story = session.currentStoryId 
+    ? session.stories.find(s => s.id === session.currentStoryId)
+    : session.stories[0];
+    
+  if (!story) return;
+
+  story.votes = [];
+  story.revealed = false;
+  
+  io.to(session.id).emit('update', {
+    votes: story.votes,
+    revealed: story.revealed
+  });
+});
+
+  socket.on('disconnect', () => {
+  const session = getSessionBySocket(socket.id);
+  if (!session) return;
+
+  console.log(`User disconnected: ${socket.id}`);
+
+  const story = session.currentStoryId 
+    ? session.stories.find(s => s.id === session.currentStoryId)
+    : session.stories[0];
+    
+  if (story) {
+    story.votes = story.votes.filter(v => v.userId !== socket.id);
+    io.to(session.id).emit('update', {
+      votes: story.votes,
+      revealed: story.revealed
+    });
+  }
+
+  const member = session.members.find(m => m.socketId === socket.id);
+  session.members = session.members.filter(m => m.socketId !== socket.id);
+  
+  if (member) {
+    socket.to(session.id).emit('memberLeft', { 
+      userName: member.userName,
+      memberCount: session.members.length 
+    });
+  }
+});
+});
+
+
+
 
 server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

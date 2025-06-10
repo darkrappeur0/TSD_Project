@@ -1,72 +1,220 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Planning Poker</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8" />
+<title>Planning Poker</title>
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Planning Poker</h1>
+<h1>Planning Poker</h1>
+<!-- Session ID display -->
+<div id="session-id" class="session-id"></div>
+<!-- User story input -->
+<div class="story-form">
+<h2>Add a User Story</h2>
+<div style="margin-bottom: 1rem;">
+<label for="csv-upload" style="font-weight: bold;">Import Stories (CSV):</label>
+<input type="file" id="csv-upload" accept=".csv" style="display: none;" />
+<div id="csv-drop-area" style="border: 2px dashed #888; padding: 1rem; text-align: center; cursor: pointer;">
+ Drag &amp; drop a CSV file here, or click to select
+</div>
+</div>
+<input type="text" id="story-title" placeholder="Story Title" />
+<textarea id="story-description" placeholder="Story Description"></textarea>
+<button onclick="addStory()">Add Story</button>
+</div>
+<!-- User story dropdown -->
+<div>
+<h3>Select a User Story</h3>
+<select id="story-dropdown" onchange="displayStoryDetails()">
+<option value="">Select a story</option>
+</select>
+</div>
+<!-- Selected story details -->
+<div id="selected-story-details" class="story-details" style="display:none;">
+<h4>Story Details:</h4>
+<p><strong>Title:</strong> <span id="story-title-display"></span></p>
+<p><strong>Description:</strong> <span id="story-description-display"></span></p>
+</div>
+<h3>Export stories</h3>
+<button id="export-csv-btn">Export</button>
+<!-- Voting deck -->
+<div id="deck" class="deck"></div>
+<!-- Controls -->
+<div class="controls">
+<button onclick="reveal()">Reveal</button>
+<button onclick="resetme()">Reset me</button>
+<button onclick="resetall()">New estimation</button>
+</div>
+<!-- Vote results -->
+<div id="votes" class="votes"></div>
 
-  <!-- Session ID display -->
-  <div id="session-id" class="session-id"></div>
+<!-- Historique des estimations -->
+<div id="estimation-history" class="estimation-history">
+<h3>Historique des Estimations</h3>
+<div class="history-controls">
+<button onclick="toggleHistory()" id="toggle-history-btn">Afficher l'historique</button>
+<button onclick="clearHistory()" id="clear-history-btn" style="margin-left: 10px;">Effacer l'historique</button>
+</div>
+<div id="history-container" class="history-container" style="display: none;">
+<div id="history-stats" class="history-stats">
+<p><strong>Total des estimations:</strong> <span id="total-estimations">0</span></p>
+<p><strong>Temps moyen par estimation:</strong> <span id="avg-time">-</span></p>
+</div>
+<div id="history-list" class="history-list">
+<!-- Les éléments d'historique seront ajoutés ici dynamiquement -->
+</div>
+</div>
+</div>
 
-  <!-- User story input -->
-  <div class="story-form">
-    <h2>Add a User Story</h2>
-        <div style="margin-bottom: 1rem;">
-      <label for="csv-upload" style="font-weight: bold;">Import Stories (CSV):</label>
-      <input type="file" id="csv-upload" accept=".csv" style="display: none;" />
-      <div id="csv-drop-area" style="border: 2px dashed #888; padding: 1rem; text-align: center; cursor: pointer;">
-        Drag &amp; drop a CSV file here, or click to select
-      </div>
-    </div>
-    <input type="text" id="story-title" placeholder="Story Title" />
-    <textarea id="story-description" placeholder="Story Description"></textarea>
-    <button onclick="addStory()">Add Story</button>
-  </div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+ document.addEventListener('DOMContentLoaded', function () {
+if (typeof renderDeck === 'function') {
+ renderDeck();
+ }
+ });
 
-  <!-- User story dropdown -->
-  <div>
-    <h3>Select a User Story</h3>
-    <select id="story-dropdown" onchange="displayStoryDetails()">
-      <option value="">Select a story</option>
-    </select>
-  </div>
+// Variables pour l'historique
+let estimationHistory = [];
+let historyVisible = false;
 
-  <!-- Selected story details -->
-  <div id="selected-story-details" class="story-details" style="display:none;">
-    <h4>Story Details:</h4>
-    <p><strong>Title:</strong> <span id="story-title-display"></span></p>
-    <p><strong>Description:</strong> <span id="story-description-display"></span></p>
-  </div>
+// Fonction pour ajouter une estimation à l'historique
+function addToHistory(storyTitle, storyDescription, votes, finalEstimate, timestamp) {
+    const historyItem = {
+        id: Date.now(),
+        storyTitle: storyTitle || 'Story sans titre',
+        storyDescription: storyDescription || 'Pas de description',
+        votes: votes,
+        finalEstimate: finalEstimate,
+        timestamp: timestamp || new Date(),
+        participants: votes.length
+    };
+    
+    estimationHistory.unshift(historyItem); // Ajouter au début
+    updateHistoryDisplay();
+    updateHistoryStats();
+    
+    // Sauvegarder dans localStorage
+    localStorage.setItem('planningPokerHistory', JSON.stringify(estimationHistory));
+}
 
-  <h3>Export stories</h3>
-  <button id="export-csv-btn">Export</button>
+// Fonction pour charger l'historique depuis localStorage
+function loadHistory() {
+    const saved = localStorage.getItem('planningPokerHistory');
+    if (saved) {
+        estimationHistory = JSON.parse(saved);
+        updateHistoryDisplay();
+        updateHistoryStats();
+    }
+}
 
+// Fonction pour afficher/masquer l'historique
+function toggleHistory() {
+    const container = document.getElementById('history-container');
+    const btn = document.getElementById('toggle-history-btn');
+    
+    historyVisible = !historyVisible;
+    container.style.display = historyVisible ? 'block' : 'none';
+    btn.textContent = historyVisible ? 'Masquer l\'historique' : 'Afficher l\'historique';
+}
 
+// Fonction pour effacer l'historique
+function clearHistory() {
+    if (confirm('Êtes-vous sûr de vouloir effacer tout l\'historique ?')) {
+        estimationHistory = [];
+        localStorage.removeItem('planningPokerHistory');
+        updateHistoryDisplay();
+        updateHistoryStats();
+    }
+}
 
-  <!-- Voting deck -->
-  <div id="deck" class="deck"></div>
-
-  <!-- Controls -->
-  <div class="controls">
-    <button onclick="reveal()">Reveal</button>
-    <button onclick="resetme()">Reset me</button>
-    <button onclick="resetall()">New estimation</button>
-  </div>
-
-  <!-- Vote results -->
-  <div id="votes" class="votes"></div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      if (typeof renderDeck === 'function') {
-        renderDeck();
-      }
+// Fonction pour mettre à jour l'affichage de l'historique
+function updateHistoryDisplay() {
+    const historyList = document.getElementById('history-list');
+    historyList.innerHTML = '';
+    
+    if (estimationHistory.length === 0) {
+        historyList.innerHTML = '<p class="no-history">Aucune estimation dans l\'historique</p>';
+        return;
+    }
+    
+    estimationHistory.forEach((item, index) => {
+        const historyElement = document.createElement('div');
+        historyElement.className = 'history-item';
+        
+        const date = new Date(item.timestamp);
+        const timeStr = date.toLocaleString('fr-FR');
+        
+        // Calculer les statistiques des votes
+        const voteValues = item.votes.map(v => parseFloat(v.vote)).filter(v => !isNaN(v));
+        const avgVote = voteValues.length > 0 ? (voteValues.reduce((a, b) => a + b, 0) / voteValues.length).toFixed(1) : 'N/A';
+        const minVote = voteValues.length > 0 ? Math.min(...voteValues) : 'N/A';
+        const maxVote = voteValues.length > 0 ? Math.max(...voteValues) : 'N/A';
+        
+        historyElement.innerHTML = `
+            <div class="history-header">
+                <h4>${item.storyTitle}</h4>
+                <span class="history-date">${timeStr}</span>
+            </div>
+            <p class="history-description">${item.storyDescription}</p>
+            <div class="history-stats-row">
+                <span><strong>Participants:</strong> ${item.participants}</span>
+                <span><strong>Estimation finale:</strong> ${item.finalEstimate || 'Non définie'}</span>
+            </div>
+            <div class="history-votes">
+                <strong>Votes:</strong> ${item.votes.map(v => `${v.userName}: ${v.vote}`).join(', ')}
+            </div>
+            <div class="history-analytics">
+                <span>Min: ${minVote}</span>
+                <span>Max: ${maxVote}</span>
+                <span>Moyenne: ${avgVote}</span>
+            </div>
+            <button onclick="removeHistoryItem(${item.id})" class="remove-history-btn">🗑️</button>
+        `;
+        
+        historyList.appendChild(historyElement);
     });
-  </script>
-  <script src="script.js"></script>
+}
+
+// Fonction pour supprimer un élément de l'historique
+function removeHistoryItem(itemId) {
+    estimationHistory = estimationHistory.filter(item => item.id !== itemId);
+    localStorage.setItem('planningPokerHistory', JSON.stringify(estimationHistory));
+    updateHistoryDisplay();
+    updateHistoryStats();
+}
+
+// Fonction pour mettre à jour les statistiques globales
+function updateHistoryStats() {
+    document.getElementById('total-estimations').textContent = estimationHistory.length;
+    
+    if (estimationHistory.length > 1) {
+        const times = [];
+        for (let i = 0; i < estimationHistory.length - 1; i++) {
+            const diff = new Date(estimationHistory[i].timestamp) - new Date(estimationHistory[i + 1].timestamp);
+            times.push(diff);
+        }
+        const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
+        const minutes = Math.floor(avgTime / 60000);
+        const seconds = Math.floor((avgTime % 60000) / 1000);
+        document.getElementById('avg-time').textContent = `${minutes}m ${seconds}s`;
+    } else {
+        document.getElementById('avg-time').textContent = '-';
+    }
+}
+
+// Charger l'historique au démarrage
+document.addEventListener('DOMContentLoaded', function() {
+    loadHistory();
+});
+
+// Hook pour capturer les estimations révélées
+// Cette fonction devra être appelée depuis votre script.js existant
+window.onEstimationComplete = function(storyTitle, storyDescription, votes, finalEstimate) {
+    addToHistory(storyTitle, storyDescription, votes, finalEstimate);
+};
+</script>
+<script src="script.js"></script>
 </body>
 </html>
