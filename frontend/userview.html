@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Planning Poker</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .user-welcome h1 {
+            margin: 0;
+            color: #007bff;
+        }
+        
+        .user-welcome p {
+            margin: 0.5rem 0 0 0;
+            color: #666;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.2s;
+            display: inline-block;
+        }
+        
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 2rem;
+            color: #007bff;
+        }
+        
+        .stat-card p {
+            margin: 0;
+            color: #666;
+        }
+        
+        .sessions-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sessions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .sessions-header h2 {
+            margin: 0;
+            color: #333;
+        }
+        
+        .sessions-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .sessions-table th,
+        .sessions-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .sessions-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .sessions-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .session-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn-sm {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+        
+        .empty-state h3 {
+            margin-bottom: 1rem;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+        
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+        }
+        
+        .close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: #007bff;
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .header-actions {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .sessions-table {
+                font-size: 0.875rem;
+            }
+            
+            .sessions-table th,
+            .sessions-table td {
+                padding: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="user-welcome">
+                <h1 id="userWelcome">Bonjour, ...</h1>
+                <p id="userEmail">Chargement...</p>
+            </div>
+            <div class="header-actions">
+                <button id="createSessionBtn" class="btn btn-success">Créer une session</button>
+                <a href="/" class="btn btn-primary">Accueil</a>
+                <button id="logoutBtn" class="btn btn-danger">Déconnexion</button>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+        <div id="successMessage" class="success-message" style="display: none;"></div>
+
+        <!-- Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3 id="totalSessions">0</h3>
+                <p>Sessions créées</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="activeSessions">0</h3>
+                <p>Sessions actives</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="totalStories">0</h3>
+                <p>Histoires estimées</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="totalParticipants">0</h3>
+                <p>Participants totaux</p>
+            </div>
+        </div>
+
+        <!-- Sessions List -->
+        <div class="sessions-section">
+            <div class="sessions-header">
+                <h2>Mes Sessions</h2>
+                <button id="refreshBtn" class="btn btn-primary">Actualiser</button>
+            </div>
+            
+            <div id="loadingState" class="loading">
+                <p>Chargement des sessions...</p>
+            </div>
+            
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <h3>Aucune session trouvée</h3>
+                <p>Créez votre première session pour commencer !</p>
+                <button class="btn btn-success" onclick="createSession()">Créer une session</button>
+            </div>
+            
+            <div id="sessionsTable" style="display: none;">
+                <table class="sessions-table">
+                    <thead>
+                        <tr>
+                            <th>ID Session</th>
+                            <th>Créée le</th>
+                            <th>Histoires</th>
+                            <th>Participants</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessionsTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for session creation -->
+    <div id="createSessionModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Créer une nouvelle session</h2>
+            <p>Une nouvelle session va être créée. Vous pourrez ensuite inviter des participants.</p>
+            <div style="text-align: right; margin-top: 2rem;">
+                <button id="cancelCreateBtn" class="btn" style="background-color: #6c757d; color: white; margin-right: 1rem;">Annuler</button>
+                <button id="confirmCreateBtn" class="btn btn-success">Créer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let sessions = [];
+
+        // Check authentication
+        function checkAuth() {
+            const token = localStorage.getItem('authToken');
+            const userInfo = localStorage.getItem('userInfo');
+            
+            if (!token || !userInfo) {
+                window.location.href = '/login';
+                return false;
+            }
+            
+            currentUser = JSON.parse(userInfo);
+            return true;
+        }
+
+        // Initialize dashboard
+        async function initDashboard() {
+            if (!checkAuth()) return;
+            
+            document.getElementById('userWelcome').textContent = `Bonjour, ${currentUser.username}`;
+            document.getElementById('userEmail').textContent = currentUser.email;
+            
+            await loadUserProfile();
+            await loadSessions();
+        }
+
+        // Load user profile
+        async function loadUserProfile() {
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch('/api/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    currentUser = data.user;
+                    localStorage.setItem('userInfo', JSON.stringify(currentUser));
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+            }
+        }
+
+        // Load sessions
+        async function loadSessions() {
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch('/api/sessions', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    sessions = await response.json();
+                    updateUI();
+                } else {
+                    throw new Error('Failed to load sessions');
+                }
+            } catch (error) {
+                console.error('Error loading sessions:', error);
+                showError('Erreur lors du chargement des sessions');
+            } finally {
+                document.getElementById('loadingState').style.display = 'none';
+            }
+        }
+
+        // Update UI with sessions data
+        function updateUI() {
+            updateStats();
+            updateSessionsTable();
+        }
+
+        // Update statistics
+        function updateStats() {
+            const totalSessions = sessions.length;
+            const activeSessions = sessions.filter(s => s.isActive).length;
+            const totalStories = sessions.reduce((acc, s) => acc + s.storyCount, 0);
+            const totalParticipants = sessions.reduce((acc, s) => acc + s.participants.length, 0);
+
+            document.getElementById('totalSessions').textContent = totalSessions;
+            document.getElementById('activeSessions').textContent = activeSessions;
+            document.getElementById('totalStories').textContent = totalStories;
+            document.getElementById('totalParticipants').textContent = totalParticipants;
+        }
+
+        // Update sessions table
+        function updateSessionsTable() {
+            const tableBody = document.getElementById('sessionsTableBody');
+            const emptyState = document.getElementById('emptyState');
+            const sessionsTable = document.getElementById('sessionsTable');
+
+            if (sessions.length === 0) {
+                emptyState.style.display = 'block';
+                sessionsTable.style.display = 'none';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            sessionsTable.style.display = 'block';
+
+            tableBody.innerHTML = '';
+            
+            sessions.forEach(session => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><code>${session.sessionId}</code></td>
+                    <td>${new Date(session.createdAt).toLocaleDateString('fr-FR')}</td>
+                    <td>${session.storyCount || 0}</td>
+                    <td>${session.participants ? session.participants.length : 0}</td>
+                    <td>
+                        <span style="color: ${session.isActive ? '#28a745' : '#6c757d'}">
+                            ${session.isActive ? 'Active' : 'Terminée'}
+                        </span>
+                    </td>
+                    <td class="session-actions">
+                        <button class="btn btn-primary btn-sm" onclick="joinSession('${session.sessionId}')">
+                            Rejoindre
+                        </button>
+                        <button class="btn btn-sm" style="background-color: #6c757d; color: white;" onclick="viewSession('${session.sessionId}')">
+                            Détails
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Create new session
+        async function createSession() {
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch('/api/session', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showSuccess('Session créée avec succès !');
+                    document.getElementById('createSessionModal').style.display = 'none';
+                    
+                    // Redirect to session page
+                    window.location.href = `/session?id=${data.sessionId}`;
+                } else {
+                    throw new Error('Failed to create session');
+                }
+            } catch (error) {
+                console.error('Error creating session:', error);
+                showError('Erreur lors de la création de la session');
+            }
+        }
+
+        // Join session
+        function joinSession(sessionId) {
+            window.location.href = `/session?id=${sessionId}`;
+        }
+
+        // View session details
+        async function viewSession(sessionId) {
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch(`/api/session/${sessionId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const session = await response.json();
+                    alert(`Session: ${sessionId}\nCréée le: ${new Date(session.createdAt).toLocaleString('fr-FR')}\nHistoires: ${session.storyCount}\nParticipants: ${session.memberCount}`);
+                } else {
+                    throw new Error('Failed to load session details');
+                }
+            } catch (error) {
+                console.error('Error loading session details:', error);
+                showError('Erreur lors du chargement des détails de la session');
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Show success message
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userInfo');
+            window.location.href = '/';
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', initDashboard);
+
+        document.getElementById('createSessionBtn').addEventListener('click', () => {
+            document.getElementById('createSessionModal').style.display = 'block';
+        });
+
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            document.getElementById('loadingState').style.display = 'block';
+            loadSessions();
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+
+        // Modal events
+        document.querySelector('.close').addEventListener('click', () => {
+            document.getElementById('createSessionModal').style.display = 'none';
+        });
+
+        document.getElementById('cancelCreateBtn').addEventListener('click', () => {
+            document.getElementById('createSessionModal').style.display = 'none';
+        });
+
+        document.getElementById('confirmCreateBtn').addEventListener('click', createSession);
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === document.getElementById('createSessionModal')) {
+                document.getElementById('createSessionModal').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
