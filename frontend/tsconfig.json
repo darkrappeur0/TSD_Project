@@ -1,0 +1,24 @@
+// TSD_Project/frontend/tsconfig.json
+{
+  "compilerOptions": {
+    "target": "es2021",
+    "module": "esnext", // <--- USE ES MODULE SYNTAX FOR BROWSER FRONTEND
+    "outDir": "../dist/frontend",  // Output to TSD_Project/frontend/dist
+    "rootDir": "./src",  // Source files are in frontend/src
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "sourceMap": true,
+    "jsx": "react-jsx" // Add this if you're using React, otherwise remove
+  },
+  "include": [
+    "src/**/*.ts" // Only include frontend source files
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.spec.ts"
+  ]
+}
