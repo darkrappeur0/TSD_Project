@@ -4,6 +4,9 @@
   - Paula Santamaria Santamaria
   - Samuel Ponzo
 
+### Team name:
+The Backlog Sweepers
+
 ## Some screenshots to navigate the site:
 ### Welcome page:
 
