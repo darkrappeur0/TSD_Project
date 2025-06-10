@@ -527,23 +527,23 @@ const broadcastSessionUpdate = async (session: ISession) => {
 };
 
 // --- Service des fichiers statiques pour le frontend ---
-app.use(express.static(path.join(__dirname, '../../frontend/dist'))); // Use path.join for robustness
+app.use(express.static(path.join(__dirname, '../..'))); // Use path.join for robustness
 
 // Rediriger la route racine vers la page d'accueil de l'application
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../frontend/dist/index.html')); // Assuming index.html is the entry
+    res.sendFile(path.join(__dirname, '../../main.html')); // Assuming index.html is the entry
 });
 
 // Pour la page de session, si l'utilisateur est déjà authentifié et a une session
 // Note: If you have client-side routing, this might not be needed for every route.
 // Just serving index.html for all unhandled routes usually works for SPA.
 app.get('/index.html', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../frontend/dist/index.html'));
+    res.sendFile(path.join(__dirname, '../../main.html'));
 });
 
 // Fallback for client-side routing (if using React Router, Vue Router, etc.)
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../frontend/dist/index.html'));
+    res.sendFile(path.join(__dirname, '../../main.html'));
 });
 
 
