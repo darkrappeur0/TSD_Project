@@ -67,6 +67,15 @@
             background-color: #218838;
         }
         
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+        
         .btn-danger {
             background-color: #dc3545;
             color: white;
@@ -215,6 +224,32 @@
             color: #007bff;
         }
         
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+        
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -246,6 +281,7 @@
                 <p id="userEmail">Chargement...</p>
             </div>
             <div class="header-actions">
+                <button id="joinSessionBtn" class="btn btn-warning">Rejoindre une session</button>
                 <button id="createSessionBtn" class="btn btn-success">Créer une session</button>
                 <a href="/" class="btn btn-primary">Accueil</a>
                 <button id="logoutBtn" class="btn btn-danger">Déconnexion</button>
@@ -312,10 +348,27 @@
         </div>
     </div>
 
+    <!-- Modal for joining session -->
+    <div id="joinSessionModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeJoinModal">&times;</span>
+            <h2>Rejoindre une session</h2>
+            <p>Entrez l'ID de la session que vous souhaitez rejoindre :</p>
+            <div class="form-group">
+                <label for="sessionIdInput">ID de la session :</label>
+                <input type="text" id="sessionIdInput" placeholder="Entrez l'ID de la session" maxlength="50">
+            </div>
+            <div style="text-align: right; margin-top: 2rem;">
+                <button id="cancelJoinBtn" class="btn" style="background-color: #6c757d; color: white; margin-right: 1rem;">Annuler</button>
+                <button id="confirmJoinBtn" class="btn btn-warning">Rejoindre</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal for session creation -->
     <div id="createSessionModal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
+            <span class="close" id="closeCreateModal">&times;</span>
             <h2>Créer une nouvelle session</h2>
             <p>Une nouvelle session va être créée. Vous pourrez ensuite inviter des participants.</p>
             <div style="text-align: right; margin-top: 2rem;">
@@ -487,6 +540,25 @@
             }
         }
 
+        // Join session by ID
+        function joinSessionById() {
+            const sessionId = document.getElementById('sessionIdInput').value.trim();
+            
+            if (!sessionId) {
+                showError('Veuillez entrer un ID de session valide');
+                return;
+            }
+            
+            // Close modal
+            document.getElementById('joinSessionModal').style.display = 'none';
+            
+            // Clear input
+            document.getElementById('sessionIdInput').value = '';
+            
+            // Join session
+            joinSession(sessionId);
+        }
+
         // Join session
         function joinSession(sessionId) {
             window.location.href = `/session?id=${sessionId}`;
@@ -544,19 +616,35 @@
         // Event listeners
         document.addEventListener('DOMContentLoaded', initDashboard);
 
+        // Join session modal events
+        document.getElementById('joinSessionBtn').addEventListener('click', () => {
+            document.getElementById('joinSessionModal').style.display = 'block';
+            document.getElementById('sessionIdInput').focus();
+        });
+
+        document.getElementById('closeJoinModal').addEventListener('click', () => {
+            document.getElementById('joinSessionModal').style.display = 'none';
+        });
+
+        document.getElementById('cancelJoinBtn').addEventListener('click', () => {
+            document.getElementById('joinSessionModal').style.display = 'none';
+        });
+
+        document.getElementById('confirmJoinBtn').addEventListener('click', joinSessionById);
+
+        // Allow Enter key to join session
+        document.getElementById('sessionIdInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                joinSessionById();
+            }
+        });
+
+        // Create session modal events
         document.getElementById('createSessionBtn').addEventListener('click', () => {
             document.getElementById('createSessionModal').style.display = 'block';
         });
 
-        document.getElementById('refreshBtn').addEventListener('click', () => {
-            document.getElementById('loadingState').style.display = 'block';
-            loadSessions();
-        });
-
-        document.getElementById('logoutBtn').addEventListener('click', logout);
-
-        // Modal events
-        document.querySelector('.close').addEventListener('click', () => {
+        document.getElementById('closeCreateModal').addEventListener('click', () => {
             document.getElementById('createSessionModal').style.display = 'none';
         });
 
@@ -566,8 +654,19 @@
 
         document.getElementById('confirmCreateBtn').addEventListener('click', createSession);
 
-        // Close modal when clicking outside
+        // Other events
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            document.getElementById('loadingState').style.display = 'block';
+            loadSessions();
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+
+        // Close modals when clicking outside
         window.addEventListener('click', (event) => {
+            if (event.target === document.getElementById('joinSessionModal')) {
+                document.getElementById('joinSessionModal').style.display = 'none';
+            }
             if (event.target === document.getElementById('createSessionModal')) {
                 document.getElementById('createSessionModal').style.display = 'none';
             }
