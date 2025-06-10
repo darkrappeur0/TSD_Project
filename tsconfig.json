@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2021", // ou "es6" si vous visez une compatibilité plus large
-    "module": "commonjs", // ou "esnext" si vous préférez les modules ES pour le backend
+    "module": "esnext", // ou "esnext" si vous préférez les modules ES pour le backend
     "outDir": "./dist", // Dossier de sortie principal pour le backend
     "rootDir": "./", // La racine de votre projet
     "strict": true,
