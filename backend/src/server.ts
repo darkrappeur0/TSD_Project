@@ -30,8 +30,8 @@ const io = new Server(server, {
 });
 
 const PORT = 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/planningpoker';
+const JWT_SECRET ='f5896879ac8e35bb293578c4efd09b9f982f9f3fa522ed2494fcafd186dd8abe2ec0ade4066febbca696ae962006536eb4d2f36814ce96916660f80a64f84e4b';
+const MONGODB_URI ='mongodb+srv://darksas7777:AgvOMCYrJS36z02G@cluster0.3jb4pcx.mongodb.net/Cluster0?retryWrites=true&w=majority&appName=Cluster0';
 
 // MongoDB Connection
 mongoose.connect(MONGODB_URI)
