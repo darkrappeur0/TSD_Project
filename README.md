@@ -19,9 +19,7 @@
 
 
 ## How to run?
-Just use the command line: 
-"cd backend"  
-"npm start"
+Just use the command line: "cd backend" and "npm start"
 
 ## Where to access it:
 http://localhost:3000
