@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planning Poker - Accueil</title>
+    <link rel="stylesheet" href="/styles/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <h1>Bienvenue sur Planning Poker</h1>
+
+        <div class="auth-section">
+            <h2>S'inscrire / Se Connecter</h2>
+            <form id="authForm">
+                <input type="text" id="username" placeholder="Nom d'utilisateur" required>
+                <input type="password" id="password" placeholder="Mot de passe" required>
+                <div class="auth-buttons">
+                    <button type="button" id="registerBtn">S'inscrire</button>
+                    <button type="button" id="loginBtn">Se Connecter</button>
+                </div>
+            </form>
+            <p id="authMessage" class="message"></p>
+        </div>
+
+        <div class="session-section" style="display: none;">
+            <h2>Gérer la Session de Planning Poker</h2>
+            <div class="create-session">
+                <h3>Créer une nouvelle session</h3>
+                <input type="text" id="newSessionId" placeholder="ID de session (ex: mon-equipe-123)" required>
+                <button type="button" id="createSessionBtn">Créer la session</button>
+            </div>
+
+            <div class="join-session">
+                <h3>Rejoindre une session existante</h3>
+                <input type="text" id="existingSessionId" placeholder="ID de session à rejoindre" required>
+                <button type="button" id="joinSessionBtn">Rejoindre la session</button>
+            </div>
+            <p id="sessionMessage" class="message"></p>
+        </div>
+        <button type="button" id="logoutBtn" style="display: none;">Déconnexion</button>
+    </div>
+
+    <script src="/src/main.js"></script>
+</body>
+</html>

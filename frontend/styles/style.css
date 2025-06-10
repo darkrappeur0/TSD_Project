@@ -1,10 +1,360 @@
+/* Styles existants pour le corps, conteneur, etc. */
+
 body {
     font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
     padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Alignement en haut pour plus de contenu */
+    min-height: 100vh;
+    box-sizing: border-box;
 }
 
-#deck button {
-    margin: 5px;
-    padding: 10px 20px;
+.container {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 900px; /* Augmenté pour la page de session */
+    box-sizing: border-box;
+}
+
+h1, h2, h3 {
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+form {
+    margin-bottom: 20px;
+}
+
+input[type="text"],
+input[type="password"],
+textarea,
+select {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
     font-size: 16px;
+    margin-right: 10px;
+    transition: background-color 0.2s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.message {
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.message.info {
+    background-color: #e7f3fe;
+    color: #0056b3;
+    border: 1px solid #007bff;
+}
+
+.message.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #28a745;
+}
+
+.message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #dc3545;
+}
+
+.message.warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffc107;
+}
+
+/* --- Styles spécifiques à main.html (Sections d'authentification et de session) --- */
+.auth-section, .session-section {
+    padding: 20px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    background-color: #fdfdfd;
+}
+
+.auth-buttons, .session-section > div {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.auth-buttons button, .session-section button {
+    flex-grow: 1;
+}
+
+/* --- Styles spécifiques à index.html (Page de session de poker planning) --- */
+.header-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.header-info span {
+    font-weight: bold;
+    color: #555;
+}
+
+.poker-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr; /* Une colonne pour le jeu, une pour les infos */
+    gap: 20px;
+}
+
+.game-area {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+}
+
+.sidebar {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+}
+
+/* Cards Container */
+.cards-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+    margin-bottom: 30px;
+}
+
+.card {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: 80px;
+    height: 120px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.card:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.card.selected {
+    background-color: #007bff;
+    color: white;
+    border-color: #0056b3;
+    transform: scale(1.1);
+}
+
+/* Votes Display */
+.votes-display {
+    border: 1px dashed #ccc;
+    padding: 15px;
+    margin-top: 20px;
+    border-radius: 8px;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-color: #f0f0f0;
+}
+
+.member-vote {
+    padding: 8px;
+    border-bottom: 1px dotted #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.member-vote:last-child {
+    border-bottom: none;
+}
+
+.member-vote strong {
+    flex-basis: 60%;
+}
+
+.member-vote span {
+    flex-basis: 40%;
+    text-align: right;
+    font-weight: bold;
+}
+
+.member-vote .voted {
+    color: #28a745;
+}
+
+.member-vote .not-voted {
+    color: #dc3545;
+}
+
+/* Control Buttons */
+.control-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.control-buttons button {
+    flex: 1;
+}
+
+/* Story Management */
+.story-management, .current-story-details, .members-list-section {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.story-management h3, .members-list-section h3 {
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.story-management form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.story-management button {
+    width: auto;
+    align-self: flex-end;
+}
+
+.story-management label {
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+#storiesList {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+#storyDetails {
+    background-color: #e9e9e9;
+    padding: 15px;
+    border-radius: 6px;
+    margin-top: 15px;
+    box-shadow: inset 0 0 3px rgba(0,0,0,0.05);
+}
+
+#storyDetails h4 {
+    margin-top: 0;
+    color: #444;
+}
+
+#storyDetails ul {
+    list-style: disc;
+    margin-left: 20px;
+    padding: 0;
+}
+
+#storyDetails ul li {
+    margin-bottom: 5px;
+}
+
+.story-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+/* Members List */
+#members-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 10px;
+}
+
+#members-list li {
+    background-color: #e0e0e0;
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* CSV Import/Export */
+.csv-controls {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.csv-controls input[type="file"] {
+    padding: 8px;
+    border: 1px dashed #ccc;
+    border-radius: 4px;
+    background-color: #fcfcfc;
+}
+
+.csv-controls button {
+    align-self: flex-start;
+}
+
+/* Message Display on Session Page */
+#messageDisplay {
+    margin-top: 20px;
+}
+
+/* Logout button on session page */
+#logoutBtn {
+    margin-top: 20px;
+    background-color: #dc3545;
+}
+
+#logoutBtn:hover {
+    background-color: #c82333;
 }

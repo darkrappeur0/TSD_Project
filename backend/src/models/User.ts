@@ -1,13 +1,28 @@
+// backend/src/models/User.ts
+
 import mongoose, { Schema, Document } from 'mongoose';
 
-interface IUser extends Document {
+// This line already exports IUser.
+export interface IUser extends Document {
     username: string;
-    password: string;
+    passwordHash: string;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 const UserSchema: Schema = new Schema({
     username: { type: String, required: true, unique: true },
-    password: { type: String, required: true }
+    passwordHash: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
 });
 
-export default mongoose.model<IUser>('User', UserSchema);
+UserSchema.pre('save', function (next) {
+    this.updatedAt = new Date();
+    next();
+});
+
+const User = mongoose.model<IUser>('User', UserSchema);
+
+// Remove 'IUser' from this export list because it's already exported above.
+export { User }; // <-- CORRECTED LINE

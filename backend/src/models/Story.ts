@@ -12,4 +12,6 @@ const StorySchema: Schema = new Schema({
     tasks: [{ type: String }]
 });
 
-export default mongoose.model<IStory>('Story', StorySchema);
+const Story = mongoose.model<IStory>('Story', StorySchema);
+
+export { Story, IStory }; // <--- This line is the key! It's a NAMED export.

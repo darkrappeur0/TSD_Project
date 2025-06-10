@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planning Poker Session</title>
+    <link rel="stylesheet" href="/styles/style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <div class="header-info">
+            <span id="username-display"></span>
+            <span id="session-id-display"></span>
+            <button id="logoutBtn">Déconnexion</button>
+        </div>
+
+        <h1>Session de Planning Poker</h1>
+
+        <div class="poker-grid">
+            <div class="game-area">
+                <h2>Voter pour l'histoire actuelle</h2>
+                <div id="cards-container" class="cards-container">
+                    </div>
+
+                <div id="votes-display" class="votes-display">
+                    Aucune histoire sélectionnée pour le vote.
+                </div>
+
+                <div class="control-buttons">
+                    <button id="revealVotesBtn" disabled>Révéler les votes</button>
+                    <button id="resetMyVoteBtn" disabled>Réinitialiser mon vote</button>
+                    <button id="resetAllVotesBtn" disabled>Réinitialiser tous les votes</button>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="story-management">
+                    <h3>Gestion des Histoires</h3>
+                    <form id="addStoryForm">
+                        <label for="storyTitle">Titre de l'histoire:</label>
+                        <input type="text" id="storyTitle" placeholder="Titre de l'histoire" required>
+
+                        <label for="storyDescription">Description (optionnel):</label>
+                        <textarea id="storyDescription" rows="3" placeholder="Description de l'histoire"></textarea>
+
+                        <label for="storyTasks">Tâches (séparées par des virgules):</label>
+                        <input type="text" id="storyTasks" placeholder="Tâche 1, Tâche 2">
+                        <button type="submit" id="addStoryBtn">Ajouter l'histoire</button>
+                    </form>
+
+                    <div class="csv-controls">
+                        <label for="importCsv">Importer depuis CSV:</label>
+                        <input type="file" id="importCsv" accept=".csv">
+                        <button id="exportCsvBtn">Exporter en CSV</button>
+                    </div>
+
+                    <div class="current-story-selection">
+                        <label for="storiesList">Sélectionner une histoire:</label>
+                        <select id="storiesList">
+                            <option value="">-- Sélectionner une histoire --</option>
+                            </select>
+                        <div class="story-actions">
+                            <button id="selectStoryBtn" style="display: none;">Sélectionner pour voter</button>
+                            <button id="deleteStoryBtn" style="display: none; background-color: #dc3545;">Supprimer l'histoire</button>
+                        </div>
+                    </div>
+
+                    <div id="storyDetails" style="display: none;">
+                        <h4>Détails de l'histoire: <span id="storyTitleDetails"></span></h4>
+                        <p id="storyDescriptionDetails"></p>
+                        <h5>Tâches:</h5>
+                        <ul id="storyTasksDetails"></ul>
+                    </div>
+                </div>
+
+                <div class="members-list-section">
+                    <h3>Membres de la Session</h3>
+                    <ul id="members-list">
+                        </ul>
+                </div>
+            </div>
+        </div>
+        <p id="messageDisplay" class="message"></p>
+    </div>
+
+    <script src="/src/app.js"></script>
+</body>
+</html>

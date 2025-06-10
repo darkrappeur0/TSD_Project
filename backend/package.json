@@ -15,7 +15,7 @@
     "jsonwebtoken": "^9.0.0",
     "mongodb": "^6.17.0",
     "mongoose": "^7.6.3",
-    "ws": "^8.13.0"
+    "ws": "^8.18.2"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
